@@ -1,0 +1,3 @@
+[submodule "vendor/pfr"]
+	path = vendor/pfr
+	url = https://github.com/boostorg/pfr.git
