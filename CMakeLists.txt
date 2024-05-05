@@ -19,6 +19,14 @@ target_link_libraries(
   PUBLIC Boost::pfr PostgreSQL::PostgreSQL
   PRIVATE fmt::fmt)
 
+option(PFR_ORM_USE_GSL_SPAN
+       "Use Microsoft.GSL for span implementation instead of std::span" OFF)
+if(PFR_ORM_USE_GSL_SPAN)
+  target_compile_definitions(pfr-orm PUBLIC PFR_ORM_USE_GSL_SPAN)
+  find_package(Microsoft.GSL REQUIRED)
+  target_link_libraries(pfr-orm PUBLIC Microsoft.GSL::GSL)
+endif()
+
 option(PFR_ORM_ASAN "Build pfr-orm with address sanitizer" OFF)
 
 if(PFR_ORM_ASAN)
