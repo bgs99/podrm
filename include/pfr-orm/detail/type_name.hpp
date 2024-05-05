@@ -38,4 +38,16 @@ template <typename T>
 constexpr std::string_view TypeName =
     WrappedTypeName<T>.substr(WrappedTypeNamePrefixLength, TypeNameLength<T>);
 
+constexpr std::string_view simplifyTypeName(std::string_view name) {
+  const auto namespaceStart = name.rfind(':');
+  if (namespaceStart != std::string_view::npos) {
+    name = name.substr(namespaceStart + 1);
+  }
+
+  return name;
+}
+
+template <typename T>
+constexpr std::string_view SimpleTypeName = simplifyTypeName(TypeName<T>);
+
 } // namespace pfrorm::detail

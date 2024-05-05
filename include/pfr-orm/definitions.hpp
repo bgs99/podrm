@@ -19,6 +19,9 @@ namespace pfrorm {
 
 struct PrimitiveFieldDescription {
   std::string_view nativeType;
+
+  friend constexpr bool operator==(PrimitiveFieldDescription,
+                                   PrimitiveFieldDescription) = default;
 };
 
 struct FieldDescription;
@@ -30,7 +33,25 @@ struct CompositeFieldDescription {
 struct FieldDescription {
   std::string_view name;
   std::variant<PrimitiveFieldDescription, CompositeFieldDescription> field;
+
+  friend constexpr bool operator==(FieldDescription,
+                                   FieldDescription) = default;
 };
+
+constexpr bool operator==(CompositeFieldDescription lhs,
+                          CompositeFieldDescription rhs) {
+  if (lhs.fields.size() != rhs.fields.size()) {
+    return false;
+  }
+
+  for (std::size_t i = 0; i < lhs.fields.size(); ++i) {
+    if (lhs.fields[i] != rhs.fields[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 struct EntityDescription {
   std::string_view name;
@@ -52,7 +73,7 @@ concept DatabaseComposite = detail::Reflectable<T> &&
 };
 
 template <typename T>
-concept DatabasePrimitive = requires() { typename ValueRegistration<T>; };
+concept DatabasePrimitive = requires() { ValueRegistration<T>::NativeType; };
 
 namespace detail {
 
@@ -77,6 +98,7 @@ getFieldDescriptionOfField(const std::string_view name) {
 }
 
 template <DatabaseComposite Field>
+  requires(not DatabasePrimitive<Field>)
 constexpr FieldDescription
 getFieldDescriptionOfField(const std::string_view name) {
   return FieldDescription{
@@ -108,7 +130,7 @@ getFieldDescriptions() {
 
 template <DatabaseEntity T>
 constexpr EntityDescription DatabaseEntityDescription{
-    .name = detail::TypeName<T>,
+    .name = detail::SimpleTypeName<T>,
     .fields = detail::FieldDescriptions<T>,
 };
 
