@@ -18,6 +18,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Install dependencies
+        run: vcpkg install fmt libpq
+
       - name: Configure CMake
         run:  cmake -B ${{ env.build_dir }} -S ${{ github.workspace }}
 
