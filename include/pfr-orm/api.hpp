@@ -19,24 +19,15 @@ enum class IdMode {
 
 /// ORM entity registration trait
 /// @tparam T registered type
-template <typename T> struct EntityRegistration {
-  /// Identifier mode
-  constexpr static IdMode IdMode = IdMode::Auto;
-
-  /// Identifier field
-  constexpr static std::uint32_t T::*IdField = nullptr;
-};
+template <typename T> struct EntityRegistration;
 
 /// ORM composite value registration trait
 /// @tparam T registered type
-template <typename T> struct CompositeRegistration {};
+template <typename T> struct CompositeRegistration;
 
 /// Basic value type mapping
 /// @tparam T registered value type
-template <typename T> struct ValueRegistration {
-  /// Name of the database's native type that corresponds to @c T
-  constexpr static std::string_view NativeType;
-};
+template <typename T> struct ValueRegistration;
 
 template <> struct ValueRegistration<uint64_t> {
   constexpr static std::string_view NativeType = "BIGINT";

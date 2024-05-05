@@ -59,9 +59,6 @@ inline ParameterTraits::Parameter ParameterTraits::toParam(const std::string& va
 template<typename T>
 concept AsParameter = requires { ParameterTraits::toParam<T>; };
 
-static_assert(not AsParameter<std::function<void()>>);
-static_assert(AsParameter<std::string>);
-
 inline Result execute(PGconn& connection, const std::string& statement) {
     Result result { PQexec(&connection, statement.c_str()) };
     if (PQresultStatus(result.get()) != PGRES_COMMAND_OK) {

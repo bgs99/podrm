@@ -15,8 +15,6 @@
 #include <variant>
 #include <vector>
 
-#include <gsl/span>
-
 namespace pfrorm {
 
 struct PrimitiveFieldDescription {
