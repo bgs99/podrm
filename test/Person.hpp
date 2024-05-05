@@ -12,7 +12,7 @@ struct Person {
 
 template <> struct pfrorm::EntityRegistration<Person> {
   /// Identifier mode
-  constexpr static IdMode IdMode = IdMode::Auto;
+  constexpr static IdMode Id = IdMode::Auto;
 
   /// Identifier field
   constexpr static std::uint64_t Person::*IdField = &Person::id;
