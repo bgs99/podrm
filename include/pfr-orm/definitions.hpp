@@ -11,15 +11,26 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include <gsl/span>
 
 namespace pfrorm {
 
-struct FieldDescription {
+struct PrimitiveFieldDescription {
   std::string_view nativeType;
-  std::string name;
+};
+
+struct FieldDescription;
+
+struct CompositeFieldDescription {
+  std::vector<FieldDescription> fields;
+};
+
+struct FieldDescription {
+  std::string_view name;
+  std::variant<PrimitiveFieldDescription, CompositeFieldDescription> field;
 };
 
 struct EntityDescription {
@@ -46,52 +57,34 @@ concept DatabasePrimitive = requires() { typename ValueRegistration<T>; };
 
 namespace detail {
 
-inline static std::vector<FieldDescription>
-addPrefixToFields(std::vector<FieldDescription> fields,
-                  const std::string_view prefix) {
-  for (FieldDescription &field : fields) {
-    field.name = addIdentifierPrefix(prefix, field.name);
-  }
-  return fields;
-}
-
 template <DatabasePrimitive Field>
-std::vector<FieldDescription>
-getFieldDescriptionsOfField(const std::string_view name) {
-  return {
-      FieldDescription{
-          .nativeType = ValueRegistration<Field>::NativeType,
-          .name{name},
-      },
+FieldDescription getFieldDescriptionOfField(const std::string_view name) {
+  return FieldDescription{
+      .name{name},
+      .field =
+          PrimitiveFieldDescription{
+              .nativeType = ValueRegistration<Field>::NativeType,
+          },
   };
 }
 
 template <DatabaseComposite Field>
-std::vector<FieldDescription>
-getFieldDescriptionsOfField(const std::string_view name) {
-  return addPrefixToFields(getFieldDescriptions<Field>(), name);
+FieldDescription getFieldDescriptionOfField(const std::string_view name) {
+  return FieldDescription{
+      .name{name},
+      .field =
+          CompositeFieldDescription{
+              .fields = getFieldDescriptions<Field>(),
+          },
+  };
 }
 
 template <detail::Reflectable T, std::size_t FieldsCount, std::size_t... Idx>
 std::vector<FieldDescription>
 getFieldDescriptions(std::array<std::string_view, FieldsCount> names,
                      std::index_sequence<Idx...>) {
-  std::array<std::vector<FieldDescription>, FieldsCount> fields = std::array{
-      getFieldDescriptionsOfField<boost::pfr::tuple_element_t<Idx, T>>(
-          names[Idx])...};
-
-  const std::size_t totalFieldsCount = (fields[Idx].size() + ...);
-
-  std::vector<FieldDescription> result;
-  result.reserve(totalFieldsCount);
-
-  for (std::vector<FieldDescription> &fieldVec : fields) {
-    for (FieldDescription &field : fieldVec) {
-      result.emplace_back(std::move(field));
-    }
-  }
-
-  return result;
+  return {getFieldDescriptionOfField<boost::pfr::tuple_element_t<Idx, T>>(
+      names[Idx])...};
 }
 
 template <detail::Reflectable T>
