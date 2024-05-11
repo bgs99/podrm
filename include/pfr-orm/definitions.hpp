@@ -18,7 +18,7 @@
 namespace pfrorm {
 
 struct PrimitiveFieldDescription {
-  std::string_view nativeType;
+  NativeType nativeType;
 
   friend constexpr bool operator==(PrimitiveFieldDescription,
                                    PrimitiveFieldDescription) = default;
@@ -56,24 +56,44 @@ constexpr bool operator==(CompositeFieldDescription lhs,
 struct EntityDescription {
   std::string_view name;
   detail::span<const FieldDescription> fields;
+  std::size_t primaryKey;
 };
 
+constexpr bool operator==(EntityDescription lhs, EntityDescription rhs) {
+  if (lhs.name != rhs.name) {
+    return false;
+  }
+
+  if (lhs.primaryKey != rhs.primaryKey) {
+    return false;
+  }
+
+  if (lhs.fields.size() != rhs.fields.size()) {
+    return false;
+  }
+
+  for (std::size_t i = 0; i < lhs.fields.size(); ++i) {
+    if (lhs.fields[i] != rhs.fields[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 template <typename T>
-concept DatabaseEntity = detail::Reflectable<T> &&
-  requires()
-{
-  typename EntityRegistration<T>;
-};
+concept DatabaseEntity =
+    detail::Reflectable<T> && std::is_same_v<decltype(EntityRegistration<T>),
+                                             const EntityRegistrationData<T>>;
 
 template <typename T>
 concept DatabaseComposite = detail::Reflectable<T> &&
-  requires()
-{
-  typename CompositeRegistration<T>;
-};
+                            std::is_same_v<decltype(CompositeRegistration<T>),
+                                           const CompositeRegistrationData<T>>;
 
 template <typename T>
-concept DatabasePrimitive = requires() { ValueRegistration<T>::NativeType; };
+concept DatabasePrimitive = std::is_same_v<decltype(ValueRegistration<T>),
+                                           const ValueRegistrationData<T>>;
 
 namespace detail {
 
@@ -92,7 +112,7 @@ getFieldDescriptionOfField(const std::string_view name) {
       .name{name},
       .field =
           PrimitiveFieldDescription{
-              .nativeType = ValueRegistration<Field>::NativeType,
+              .nativeType = ValueRegistration<Field>.nativeType,
           },
   };
 }
@@ -132,6 +152,7 @@ template <DatabaseEntity T>
 constexpr EntityDescription DatabaseEntityDescription{
     .name = detail::SimpleTypeName<T>,
     .fields = detail::FieldDescriptions<T>,
+    .primaryKey = EntityRegistration<T>.id.get(),
 };
 
 } // namespace pfrorm

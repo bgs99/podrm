@@ -6,4 +6,4 @@ add_compile_options(-fsanitize=address)
 add_link_options(-fsanitize=address)
 
 add_executable(test test.cpp simple.cpp nested.cpp)
-target_link_libraries(test pfr-orm)
+target_link_libraries(test pfr-orm fmt::fmt)

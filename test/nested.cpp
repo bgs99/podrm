@@ -18,45 +18,71 @@ struct Entity {
 
 } // namespace
 
-template <> struct pfrorm::CompositeRegistration<Composite> {};
+template <>
+constexpr auto pfrorm::CompositeRegistration<Composite> =
+    CompositeRegistrationData<Composite>{};
 
-template <> struct pfrorm::EntityRegistration<Entity> {
-  /// Identifier mode
-  constexpr static IdMode Id = IdMode::Auto;
-
-  /// Identifier field
-  constexpr static std::uint64_t Entity::*IdField = &Entity::id;
-};
+template <>
+constexpr auto pfrorm::EntityRegistration<Entity> =
+    pfrorm::EntityRegistrationData<Entity>{
+        .id = PFRORM_FIELD(Entity, id),
+        .idMode = IdMode::Auto,
+    };
 
 namespace {
 
 static_assert(pfrorm::DatabaseComposite<Composite>);
 static_assert(pfrorm::DatabaseEntity<Entity>);
+static_assert(not pfrorm::DatabaseEntity<Composite>);
+static_assert(not pfrorm::DatabaseComposite<Entity>);
 
 constexpr pfrorm::EntityDescription EntityDescription =
     pfrorm::DatabaseEntityDescription<Entity>;
 
-static_assert(EntityDescription.name == "Entity");
-static_assert(EntityDescription.fields[0].name == "id");
-static_assert(std::get<pfrorm::PrimitiveFieldDescription>(
-                  EntityDescription.fields[0].field) ==
-              pfrorm::PrimitiveFieldDescription{.nativeType = "BIGINT"});
-static_assert(EntityDescription.fields[1].name == "composite");
-
-constexpr std::array CompositeFieldsDescriptions = {
+constexpr std::array ExpectedCompositeFields = {
     pfrorm::FieldDescription{
         .name = "a",
-        .field = pfrorm::PrimitiveFieldDescription{.nativeType = "BIGINT"}},
+        .field =
+            pfrorm::PrimitiveFieldDescription{
+                .nativeType = pfrorm::NativeType::BigInt,
+            },
+    },
     pfrorm::FieldDescription{
         .name = "b",
-        .field = pfrorm::PrimitiveFieldDescription{.nativeType = "BIGINT"}},
+        .field =
+            pfrorm::PrimitiveFieldDescription{
+                .nativeType = pfrorm::NativeType::BigInt,
+            },
+    },
 };
 
-constexpr pfrorm::CompositeFieldDescription CompositeDescription = {
-    .fields = CompositeFieldsDescriptions,
+constexpr pfrorm::CompositeFieldDescription ExpectedCompositeDescription = {
+    .fields = ExpectedCompositeFields,
 };
 
-static_assert(std::get<pfrorm::CompositeFieldDescription>(
-                  EntityDescription.fields[1].field) == CompositeDescription);
+constexpr std::array ExpectedEntityFields = {
+    pfrorm::FieldDescription{
+        .name = "id",
+        .field =
+            pfrorm::PrimitiveFieldDescription{
+                .nativeType = pfrorm::NativeType::BigInt,
+            },
+    },
+    pfrorm::FieldDescription{
+        .name = "composite",
+        .field =
+            pfrorm::CompositeFieldDescription{
+                .fields = ExpectedCompositeFields,
+            },
+    },
+};
+
+constexpr pfrorm::EntityDescription ExpectedEntityDescription = {
+    .name = "Entity",
+    .fields = ExpectedEntityFields,
+    .primaryKey = 0,
+};
+
+static_assert(EntityDescription == ExpectedEntityDescription);
 
 } // namespace
