@@ -1,9 +1,14 @@
 #pragma once
 
-#include <boost/pfr.hpp>
+#include <pfr-orm/detail/field.hpp>
+#include <pfr-orm/detail/pfr.hpp>
 
+#include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string_view>
+
+#include <boost/pfr.hpp>
 
 static_assert(BOOST_PFR_ENABLED, "Boost.PFR is not supported, cannot build");
 static_assert(BOOST_PFR_CORE_NAME_ENABLED,
@@ -17,9 +22,33 @@ enum class IdMode {
   Manual, ///< Provided when persisting
 };
 
-/// ORM entity registration trait
+template <typename T> class FieldDescriptor {
+public:
+  constexpr std::size_t get() const { return this->field; }
+
+private:
+  std::size_t field;
+
+  constexpr FieldDescriptor(const std::size_t field) : field(field) {}
+
+  template <detail::Reflectable C>
+  friend constexpr FieldDescriptor<C>
+  detail::getFieldDescriptor(const auto C::*, std::string_view);
+};
+
+#define PFRORM_FIELD(type, field)                                              \
+  ::pfrorm::detail::getFieldDescriptor(&type::field, #field)
+
+template <typename T> struct EntityRegistrationData {
+  FieldDescriptor<T> id;
+  IdMode idMode;
+};
+
+/// ORM entity registration
 /// @tparam T registered type
-template <typename T> struct EntityRegistration;
+template <typename T>
+constexpr std::optional<EntityRegistrationData<T>> EntityRegistration =
+    std::nullopt;
 
 /// ORM composite value registration trait
 /// @tparam T registered type

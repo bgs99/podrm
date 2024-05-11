@@ -56,14 +56,13 @@ constexpr bool operator==(CompositeFieldDescription lhs,
 struct EntityDescription {
   std::string_view name;
   detail::span<const FieldDescription> fields;
+  std::size_t primaryKey;
 };
 
 template <typename T>
-concept DatabaseEntity = detail::Reflectable<T> &&
-  requires()
-{
-  typename EntityRegistration<T>;
-};
+concept DatabaseEntity =
+    detail::Reflectable<T> && std::is_same_v<decltype(EntityRegistration<T>),
+                                             const EntityRegistrationData<T>>;
 
 template <typename T>
 concept DatabaseComposite = detail::Reflectable<T> &&
@@ -132,6 +131,7 @@ template <DatabaseEntity T>
 constexpr EntityDescription DatabaseEntityDescription{
     .name = detail::SimpleTypeName<T>,
     .fields = detail::FieldDescriptions<T>,
+    .primaryKey = EntityRegistration<T>.id.get(),
 };
 
 } // namespace pfrorm

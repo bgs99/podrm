@@ -1,9 +1,10 @@
-#include "pfr-orm/definitions.hpp"
-#include <iostream>
+#include <pfr-orm/definitions.hpp>
 #include <pfr-orm/operations.hpp>
 #include <pfr-orm/postges-helpers.hpp>
 
 #include <cassert>
+
+#include <fmt/core.h>
 
 namespace pg_orm = pfrorm::postgres;
 
@@ -17,18 +18,17 @@ struct Person {
 
 } // namespace
 
-template <> struct pfrorm::EntityRegistration<Person> {
-  /// Identifier mode
-  constexpr static IdMode Id = IdMode::Auto;
-
-  /// Identifier field
-  constexpr static std::uint64_t Person::*IdField = &Person::id;
-};
+template <>
+constexpr auto pfrorm::EntityRegistration<Person> =
+    pfrorm::EntityRegistrationData<Person>{
+        .id = PFRORM_FIELD(Person, id),
+        .idMode = IdMode::Auto,
+    };
 
 static_assert(pfrorm::DatabaseEntity<Person>);
 
 int main(int argc, char **argv) {
-  std::cout << pfrorm::DatabaseEntityDescription<Person>.name << std::endl;
+  fmt::println("{}", pfrorm::DatabaseEntityDescription<Person>.name);
 
   pg_orm::Connection conn = pg_orm::connect(argv[1]);
 

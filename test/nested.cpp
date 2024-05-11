@@ -20,18 +20,18 @@ struct Entity {
 
 template <> struct pfrorm::CompositeRegistration<Composite> {};
 
-template <> struct pfrorm::EntityRegistration<Entity> {
-  /// Identifier mode
-  constexpr static IdMode Id = IdMode::Auto;
-
-  /// Identifier field
-  constexpr static std::uint64_t Entity::*IdField = &Entity::id;
-};
+template <>
+constexpr auto pfrorm::EntityRegistration<Entity> =
+    pfrorm::EntityRegistrationData<Entity>{
+        .id = PFRORM_FIELD(Entity, id),
+        .idMode = IdMode::Auto,
+    };
 
 namespace {
 
 static_assert(pfrorm::DatabaseComposite<Composite>);
 static_assert(pfrorm::DatabaseEntity<Entity>);
+static_assert(not pfrorm::DatabaseEntity<Composite>);
 
 constexpr pfrorm::EntityDescription EntityDescription =
     pfrorm::DatabaseEntityDescription<Entity>;

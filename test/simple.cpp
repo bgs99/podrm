@@ -12,19 +12,21 @@ struct Person {
   std::string name;
 };
 
+struct NotPerson {};
+
 } // namespace
 
-template <> struct pfrorm::EntityRegistration<Person> {
-  /// Identifier mode
-  constexpr static IdMode Id = IdMode::Auto;
-
-  /// Identifier field
-  constexpr static std::uint64_t Person::*IdField = &Person::id;
-};
+template <>
+constexpr auto pfrorm::EntityRegistration<Person> =
+    pfrorm::EntityRegistrationData<Person>{
+        .id = PFRORM_FIELD(Person, id),
+        .idMode = IdMode::Auto,
+    };
 
 namespace {
 
 static_assert(pfrorm::DatabaseEntity<Person>);
+static_assert(not pfrorm::DatabaseEntity<NotPerson>);
 
 constexpr pfrorm::EntityDescription PersonDescription =
     pfrorm::DatabaseEntityDescription<Person>;

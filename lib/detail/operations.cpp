@@ -2,6 +2,7 @@
 #include "pfr-orm/definitions.hpp"
 #include "pfr-orm/postges-helpers.hpp"
 
+#include <cstddef>
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <libpq-fe.h>
@@ -12,25 +13,27 @@ namespace pfrorm::postgres::detail {
 
 namespace {
 
-void createTableFields(const FieldDescription &description, PGconn &connection,
+void createTableFields(const FieldDescription &description,
+                       const bool isPrimaryKey, PGconn &connection,
                        fmt::appender &appender,
                        std::vector<std::string_view> prefixes, bool &first) {
   prefixes.push_back(description.name);
 
   const auto createPrimitiveField =
-      [&prefixes, &connection, &appender,
+      [isPrimaryKey, &prefixes, &connection, &appender,
        &first](const PrimitiveFieldDescription &descr) {
-        fmt::format_to(appender, "{}{} {}", first ? "" : ",",
+        fmt::format_to(appender, "{}{} {}{}", first ? "" : ",",
                        escapeIdentifier(connection, fmt::to_string(fmt::join(
                                                         prefixes, "_"))),
-                       descr.nativeType);
+                       descr.nativeType, isPrimaryKey ? " PRIMARY KEY" : "");
         first = false;
       };
   const auto createCompositeField =
       [&prefixes, &connection, &appender,
        &first](const CompositeFieldDescription &descr) {
         for (const FieldDescription &field : descr.fields) {
-          createTableFields(field, connection, appender, prefixes, first);
+          createTableFields(field, false, connection, appender, prefixes,
+                            first);
         }
       };
 
@@ -57,8 +60,9 @@ void createTable(PGconn &connection, const EntityDescription &entity) {
   fmt::appender appender{buf};
   fmt::format_to(appender, "CREATE TABLE {} (", escapedTableName);
   bool first = true;
-  for (const FieldDescription &field : entity.fields) {
-    createTableFields(field, connection, appender, {}, first);
+  for (std::size_t i = 0; i < entity.fields.size(); ++i) {
+    createTableFields(entity.fields[i], entity.primaryKey == i, connection,
+                      appender, {}, first);
   }
   fmt::format_to(appender, ")");
   execute(connection, fmt::to_string(buf));
