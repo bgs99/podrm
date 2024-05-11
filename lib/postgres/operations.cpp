@@ -1,8 +1,10 @@
+#include "../detail/multilambda.hpp"
+#include "formatters.hpp" // IWYU pragma: keep
+
 #include <pfr-orm/api.hpp>
 #include <pfr-orm/definitions.hpp>
-#include <pfr-orm/postges-helpers.hpp>
+#include <pfr-orm/postgres/utils.hpp>
 
-#include "multilambda.hpp"
 #include <cstddef>
 #include <string_view>
 #include <type_traits>
@@ -11,7 +13,6 @@
 
 #include <fmt/core.h>
 #include <fmt/format.h>
-#include <libpq-fe.h>
 
 namespace pfrorm::postgres::detail {
 
@@ -27,7 +28,7 @@ std::string_view toString(const NativeType type) {
 }
 
 void createTableFields(const FieldDescription &description,
-                       const bool isPrimaryKey, PGconn &connection,
+                       const bool isPrimaryKey, Connection &connection,
                        fmt::appender &appender,
                        std::vector<std::string_view> prefixes, bool &first) {
   prefixes.push_back(description.name);
@@ -35,11 +36,11 @@ void createTableFields(const FieldDescription &description,
   const auto createPrimitiveField =
       [isPrimaryKey, &prefixes, &connection, &appender,
        &first](const PrimitiveFieldDescription &descr) {
-        fmt::format_to(
-            appender, "{}{} {}{}", first ? "" : ",",
-            escapeIdentifier(connection,
-                             fmt::to_string(fmt::join(prefixes, "_"))),
-            toString(descr.nativeType), isPrimaryKey ? " PRIMARY KEY" : "");
+        fmt::format_to(appender, "{}{} {}{}", first ? "" : ",",
+                       connection.escapeIdentifier(
+                           fmt::to_string(fmt::join(prefixes, "_"))),
+                       toString(descr.nativeType),
+                       isPrimaryKey ? " PRIMARY KEY" : "");
         first = false;
       };
 
@@ -67,9 +68,9 @@ void createTableFields(const FieldDescription &description,
 
 } // namespace
 
-void createTable(PGconn &connection, const EntityDescription &entity) {
-  const Str escapedTableName = escapeIdentifier(connection, entity.name);
-  execute(connection, fmt::format("DROP TABLE IF EXISTS {}", escapedTableName));
+void createTable(Connection &connection, const EntityDescription &entity) {
+  const Str escapedTableName = connection.escapeIdentifier(entity.name);
+  connection.execute(fmt::format("DROP TABLE IF EXISTS {}", escapedTableName));
 
   fmt::memory_buffer buf;
   fmt::appender appender{buf};
@@ -80,14 +81,14 @@ void createTable(PGconn &connection, const EntityDescription &entity) {
                       appender, {}, first);
   }
   fmt::format_to(appender, ")");
-  execute(connection, fmt::to_string(buf));
+  connection.execute(fmt::to_string(buf));
 }
 
-bool exists(PGconn &connection, const EntityDescription &entity) {
+bool exists(Connection &connection, const EntityDescription &entity) {
   const Result result =
-      query(connection, fmt::format("SELECT EXISTS(SELECT 1 FROM {})",
-                                    escapeIdentifier(connection, entity.name)));
-  return *PQgetvalue(result.get(), 0, 0) == 't';
+      connection.query(fmt::format("SELECT EXISTS(SELECT 1 FROM {})",
+                                   connection.escapeIdentifier(entity.name)));
+  return result.value(0, 0)[0] == 't';
 }
 
 } // namespace pfrorm::postgres::detail

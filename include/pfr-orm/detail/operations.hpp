@@ -1,13 +1,12 @@
 #pragma once
 
 #include <pfr-orm/definitions.hpp>
-
-#include <libpq-fe.h>
+#include <pfr-orm/postgres/utils.hpp>
 
 namespace pfrorm::postgres::detail {
 
-void createTable(PGconn &connection, const EntityDescription &entity);
+void createTable(Connection &connection, const EntityDescription &entity);
 
-bool exists(PGconn &connection, const EntityDescription &entity);
+bool exists(Connection &connection, const EntityDescription &entity);
 
 } // namespace pfrorm::postgres::detail

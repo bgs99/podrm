@@ -1,7 +1,7 @@
 #include <pfr-orm/api.hpp>
 #include <pfr-orm/definitions.hpp>
-#include <pfr-orm/operations.hpp>
-#include <pfr-orm/postges-helpers.hpp>
+#include <pfr-orm/postgres/operations.hpp>
+#include <pfr-orm/postgres/utils.hpp>
 
 #include <cassert>
 #include <cstddef>
@@ -37,11 +37,11 @@ int main(int argc, char **argv) {
   const std::span<char *> args{argv, static_cast<std::size_t>(argc)};
 
   try {
-    pg_orm::Connection conn = pg_orm::connect(args[1]);
+    pg_orm::Connection conn{args[1]};
 
-    pg_orm::createTable<Person>(*conn);
+    pg_orm::createTable<Person>(conn);
 
-    assert(!pg_orm::exists<Person>(*conn));
+    assert(!pg_orm::exists<Person>(conn));
 
     return 0;
   } catch (const std::exception &ex) {
