@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pfr-orm/definitions.hpp"
+#include <pfr-orm/definitions.hpp>
 
 #include <libpq-fe.h>
 
