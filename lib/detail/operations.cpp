@@ -2,14 +2,13 @@
 #include "pfr-orm/api.hpp"
 #include "pfr-orm/definitions.hpp"
 #include "pfr-orm/postges-helpers.hpp"
-
 #include <cstddef>
+#include <string_view>
+#include <variant>
+
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <libpq-fe.h>
-
-#include <string_view>
-#include <variant>
 
 namespace pfrorm::postgres::detail {
 
