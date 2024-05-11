@@ -1,7 +1,8 @@
+#include <pfr-orm/api.hpp>
+#include <pfr-orm/definitions.hpp>
+#include <pfr-orm/postges-helpers.hpp>
+
 #include "multilambda.hpp"
-#include "pfr-orm/api.hpp"
-#include "pfr-orm/definitions.hpp"
-#include "pfr-orm/postges-helpers.hpp"
 #include <cstddef>
 #include <string_view>
 #include <type_traits>
@@ -25,7 +26,6 @@ std::string_view toString(const NativeType type) {
   }
 }
 
-// NOLINTNEXTLINE(misc-no-recursion): by design
 void createTableFields(const FieldDescription &description,
                        const bool isPrimaryKey, PGconn &connection,
                        fmt::appender &appender,
@@ -44,7 +44,6 @@ void createTableFields(const FieldDescription &description,
       };
 
   const auto createCompositeField =
-      // NOLINTNEXTLINE(misc-no-recursion): by design
       [&prefixes, &connection, &appender,
        &first](const CompositeFieldDescription &descr) {
         for (const FieldDescription &field : descr.fields) {

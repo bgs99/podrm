@@ -1,4 +1,5 @@
 #include <pfr-orm/api.hpp>
+#include <pfr-orm/definitions.hpp>
 #include <pfr-orm/operations.hpp>
 #include <pfr-orm/postges-helpers.hpp>
 
@@ -36,7 +37,7 @@ int main(int argc, char **argv) {
   const std::span<char *> args{argv, static_cast<std::size_t>(argc)};
 
   try {
-    pg_orm::Connection conn = pg_orm::connect(args.at(1));
+    pg_orm::Connection conn = pg_orm::connect(args[1]);
 
     pg_orm::createTable<Person>(*conn);
 
@@ -44,10 +45,10 @@ int main(int argc, char **argv) {
 
     return 0;
   } catch (const std::exception &ex) {
-    fmt::println("{}", ex.what());
+    fmt::print("{}\n", ex.what());
     return 1;
   } catch (...) {
-    fmt::println("Unknown exception");
+    fmt::print("Unknown exception\n");
     return 1;
   }
 }

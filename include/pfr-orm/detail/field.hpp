@@ -3,7 +3,10 @@
 #include <pfr-orm/detail/pfr.hpp>
 
 #include <algorithm>
+#include <array>
+#include <cstddef>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 
 #include <boost/pfr/core_name.hpp>

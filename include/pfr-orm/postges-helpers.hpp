@@ -1,15 +1,12 @@
 #pragma once
 
-#include <arpa/inet.h>
 #include <cstdint>
 #include <memory>
-#include <postgres_ext.h>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 
 #include <fmt/core.h>
-#include <fmt/format.h>
 #include <libpq-fe.h>
 
 namespace pfrorm::postgres {

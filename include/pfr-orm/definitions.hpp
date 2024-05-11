@@ -5,6 +5,7 @@
 #include <pfr-orm/detail/span.hpp>
 #include <pfr-orm/detail/type_name.hpp>
 
+#include <array>
 #include <cstddef>
 #include <string>
 #include <string_view>

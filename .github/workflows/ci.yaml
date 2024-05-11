@@ -22,6 +22,29 @@ jobs:
       - name: Check formatting
         run: python ${{ github.workspace }}/scripts/check_format.py --clang-format=clang-format-18
 
+  check-tidy:
+    runs-on: ubuntu-22.04
+    env:
+      build_dir: ${{ github.workspace }}/build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Add LLVM apt key
+        run: wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/llvm-toolchain-focal-18.asc
+
+      - name: Add LLVM repo
+        run: sudo add-apt-repository 'deb http://apt.llvm.org/focal/ llvm-toolchain-focal-18 main'
+
+      - name: Install dependencies
+        run: sudo apt-get install libfmt-dev libpq-dev clang-tidy-18
+
+      - name: Configure CMake
+        run: cmake -B ${{ env.build_dir }} -S ${{ github.workspace }}
+
+      - name: Run clang-tidy
+        run: python ${{ github.workspace }}/scripts/tidy.py --clang-tidy=run-clang-tidy-18 --compile-commands=${{ env.build_dir }}
+
   test:
     runs-on: ${{ matrix.os }}
     strategy:

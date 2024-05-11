@@ -9,10 +9,10 @@ from common.project import cpp_files
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=True)
-    parser.add_argument('--clang-format',
-                        help='clang-format executable to use',
+    parser.add_argument('--clang-tidy',
+                        help='clang-tidy executable to use',
                         type=str,
-                        default='clang-format')
+                        default='run-clang-tidy')
     parser.add_argument('--compile-commands',
                         help='Path to the directory with compile commands',
                         type=Path,
@@ -20,5 +20,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    subprocess.run(['run-clang-tidy', '-quiet', '-p', args.compile_commands.as_posix(),
+    subprocess.run([args.clang_tidy, '-quiet', '-p', args.compile_commands.as_posix(),
                     *[file.as_posix() for file in cpp_files()]])
