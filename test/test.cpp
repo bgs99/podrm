@@ -1,10 +1,13 @@
-#include <pfr-orm/definitions.hpp>
+#include <pfr-orm/api.hpp>
 #include <pfr-orm/operations.hpp>
 #include <pfr-orm/postges-helpers.hpp>
 
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <span>
+#include <string>
 
 #include <fmt/core.h>
 

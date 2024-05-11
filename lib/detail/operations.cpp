@@ -4,7 +4,9 @@
 #include "pfr-orm/postges-helpers.hpp"
 #include <cstddef>
 #include <string_view>
+#include <type_traits>
 #include <variant>
+#include <vector>
 
 #include <fmt/core.h>
 #include <fmt/format.h>
@@ -23,6 +25,7 @@ std::string_view toString(const NativeType type) {
   }
 }
 
+// NOLINTNEXTLINE(misc-no-recursion): by design
 void createTableFields(const FieldDescription &description,
                        const bool isPrimaryKey, PGconn &connection,
                        fmt::appender &appender,
@@ -39,7 +42,9 @@ void createTableFields(const FieldDescription &description,
             toString(descr.nativeType), isPrimaryKey ? " PRIMARY KEY" : "");
         first = false;
       };
+
   const auto createCompositeField =
+      // NOLINTNEXTLINE(misc-no-recursion): by design
       [&prefixes, &connection, &appender,
        &first](const CompositeFieldDescription &descr) {
         for (const FieldDescription &field : descr.fields) {
