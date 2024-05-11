@@ -17,10 +17,10 @@ jobs:
         run: sudo add-apt-repository 'deb http://apt.llvm.org/focal/ llvm-toolchain-focal-18 main'
 
       - name: Install new clang-format
-        run: sudo apt-get install clang-format-18 && sudo update-alternatives --set clang-format clang-format-18
+        run: sudo apt-get install clang-format-18
 
       - name: Check formatting
-        run: python ${{ github.workspace }}/scripts/check_format.py
+        run: python ${{ github.workspace }}/scripts/check_format.py --clang-format=clang-format-18
 
   test:
     runs-on: ${{ matrix.os }}
