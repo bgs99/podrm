@@ -18,7 +18,9 @@ struct Entity {
 
 } // namespace
 
-template <> struct pfrorm::CompositeRegistration<Composite> {};
+template <>
+constexpr auto pfrorm::CompositeRegistration<Composite> =
+    CompositeRegistrationData<Composite>{};
 
 template <>
 constexpr auto pfrorm::EntityRegistration<Entity> =
@@ -32,6 +34,7 @@ namespace {
 static_assert(pfrorm::DatabaseComposite<Composite>);
 static_assert(pfrorm::DatabaseEntity<Entity>);
 static_assert(not pfrorm::DatabaseEntity<Composite>);
+static_assert(not pfrorm::DatabaseComposite<Entity>);
 
 constexpr pfrorm::EntityDescription EntityDescription =
     pfrorm::DatabaseEntityDescription<Entity>;

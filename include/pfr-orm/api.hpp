@@ -50,9 +50,13 @@ template <typename T>
 constexpr std::optional<EntityRegistrationData<T>> EntityRegistration =
     std::nullopt;
 
-/// ORM composite value registration trait
+template <typename T> struct CompositeRegistrationData {};
+
+/// ORM composite value registration
 /// @tparam T registered type
-template <typename T> struct CompositeRegistration;
+template <typename T>
+std::optional<CompositeRegistrationData<T>> CompositeRegistration =
+    std::nullopt;
 
 /// Basic value type mapping
 /// @tparam T registered value type

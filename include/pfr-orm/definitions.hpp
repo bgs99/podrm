@@ -66,10 +66,8 @@ concept DatabaseEntity =
 
 template <typename T>
 concept DatabaseComposite = detail::Reflectable<T> &&
-  requires()
-{
-  typename CompositeRegistration<T>;
-};
+                            std::is_same_v<decltype(CompositeRegistration<T>),
+                                           const CompositeRegistrationData<T>>;
 
 template <typename T>
 concept DatabasePrimitive = requires() { ValueRegistration<T>::NativeType; };
