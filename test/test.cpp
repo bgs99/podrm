@@ -3,6 +3,8 @@
 #include <pfr-orm/postges-helpers.hpp>
 
 #include <cassert>
+#include <exception>
+#include <span>
 
 #include <fmt/core.h>
 
@@ -28,11 +30,21 @@ constexpr auto pfrorm::EntityRegistration<Person> =
 static_assert(pfrorm::DatabaseEntity<Person>);
 
 int main(int argc, char **argv) {
-  fmt::println("{}", pfrorm::DatabaseEntityDescription<Person>.name);
+  const std::span<char *> args{argv, static_cast<std::size_t>(argc)};
 
-  pg_orm::Connection conn = pg_orm::connect(argv[1]);
+  try {
+    pg_orm::Connection conn = pg_orm::connect(args.at(1));
 
-  pg_orm::createTable<Person>(*conn);
+    pg_orm::createTable<Person>(*conn);
 
-  assert(!pg_orm::exists<Person>(*conn));
+    assert(!pg_orm::exists<Person>(*conn));
+
+    return 0;
+  } catch (const std::exception &ex) {
+    fmt::println("{}", ex.what());
+    return 1;
+  } catch (...) {
+    fmt::println("Unknown exception");
+    return 1;
+  }
 }

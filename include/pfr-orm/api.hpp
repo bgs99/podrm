@@ -25,7 +25,7 @@ enum class IdMode {
 
 template <typename T> class FieldDescriptor {
 public:
-  constexpr std::size_t get() const { return this->field; }
+  [[nodiscard]] constexpr std::size_t get() const { return this->field; }
 
 private:
   std::size_t field;
@@ -37,6 +37,7 @@ private:
   detail::getFieldDescriptor(const auto C::*, std::string_view);
 };
 
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): TODO
 #define PFRORM_FIELD(type, field)                                              \
   ::pfrorm::detail::getFieldDescriptor(&type::field, #field)
 
@@ -56,7 +57,7 @@ template <typename T> struct CompositeRegistrationData {};
 /// ORM composite value registration
 /// @tparam T registered type
 template <typename T>
-std::optional<CompositeRegistrationData<T>> CompositeRegistration =
+constexpr std::optional<CompositeRegistrationData<T>> CompositeRegistration =
     std::nullopt;
 
 enum class NativeType : std::uint8_t {
@@ -71,7 +72,8 @@ template <typename T> struct ValueRegistrationData {
 /// Basic value type mapping
 /// @tparam T registered value type
 template <typename T>
-std::optional<ValueRegistrationData<T>> ValueRegistration = std::nullopt;
+constexpr std::optional<ValueRegistrationData<T>> ValueRegistration =
+    std::nullopt;
 
 template <>
 inline constexpr auto ValueRegistration<uint64_t> =
