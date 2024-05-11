@@ -1,0 +1,14 @@
+BasedOnStyle: LLVM
+
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<pfr-orm/'
+    CaseSensitive: true
+    Priority: 1
+  - Regex: '^<(fmt/|boost/|libpq-fe.h>)'
+    CaseSensitive: true
+    Priority: 3
+  - Priority: 2
+
+
+ForEachMacros: []

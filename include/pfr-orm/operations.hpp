@@ -1,8 +1,9 @@
 #pragma once
 
-#include <libpq-fe.h>
 #include <pfr-orm/definitions.hpp>
 #include <pfr-orm/detail/operations.hpp>
+
+#include <libpq-fe.h>
 
 namespace pfrorm::postgres {
 
