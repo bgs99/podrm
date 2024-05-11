@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <string_view>
 
 #include <boost/pfr.hpp>
@@ -58,17 +59,31 @@ template <typename T>
 std::optional<CompositeRegistrationData<T>> CompositeRegistration =
     std::nullopt;
 
+enum class NativeType : std::uint8_t {
+  BigInt,
+  String,
+};
+
+template <typename T> struct ValueRegistrationData {
+  NativeType nativeType;
+};
+
 /// Basic value type mapping
 /// @tparam T registered value type
-template <typename T> struct ValueRegistration;
+template <typename T>
+std::optional<ValueRegistrationData<T>> ValueRegistration = std::nullopt;
 
-template <> struct ValueRegistration<uint64_t> {
-  constexpr static std::string_view NativeType = "BIGINT";
-};
+template <>
+inline constexpr auto ValueRegistration<uint64_t> =
+    ValueRegistrationData<uint64_t>{
+        .nativeType = NativeType::BigInt,
+    };
 
-template <> struct ValueRegistration<std::string> {
-  constexpr static std::string_view NativeType = "VARCHAR";
-};
+template <>
+inline constexpr auto ValueRegistration<std::string> =
+    ValueRegistrationData<std::string>{
+        .nativeType = NativeType::String,
+    };
 
 /// Tag to be used with boost::pfr::is_reflectable*
 struct ReflectionTag;

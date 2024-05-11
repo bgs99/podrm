@@ -1,4 +1,5 @@
 #include "multilambda.hpp"
+#include "pfr-orm/api.hpp"
 #include "pfr-orm/definitions.hpp"
 #include "pfr-orm/postges-helpers.hpp"
 
@@ -7,11 +8,21 @@
 #include <fmt/format.h>
 #include <libpq-fe.h>
 
+#include <string_view>
 #include <variant>
 
 namespace pfrorm::postgres::detail {
 
 namespace {
+
+std::string_view toString(const NativeType type) {
+  switch (type) {
+  case NativeType::BigInt:
+    return "BIGINT";
+  case NativeType::String:
+    return "VARCHAR";
+  }
+}
 
 void createTableFields(const FieldDescription &description,
                        const bool isPrimaryKey, PGconn &connection,
@@ -22,10 +33,11 @@ void createTableFields(const FieldDescription &description,
   const auto createPrimitiveField =
       [isPrimaryKey, &prefixes, &connection, &appender,
        &first](const PrimitiveFieldDescription &descr) {
-        fmt::format_to(appender, "{}{} {}{}", first ? "" : ",",
-                       escapeIdentifier(connection, fmt::to_string(fmt::join(
-                                                        prefixes, "_"))),
-                       descr.nativeType, isPrimaryKey ? " PRIMARY KEY" : "");
+        fmt::format_to(
+            appender, "{}{} {}{}", first ? "" : ",",
+            escapeIdentifier(connection,
+                             fmt::to_string(fmt::join(prefixes, "_"))),
+            toString(descr.nativeType), isPrimaryKey ? " PRIMARY KEY" : "");
         first = false;
       };
   const auto createCompositeField =
