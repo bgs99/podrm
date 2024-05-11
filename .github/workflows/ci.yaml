@@ -10,6 +10,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Add LLVM apt key
+        run: wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/llvm-toolchain-focal-18.asc
+
+      - name: Add LLVM repo
+        run: sudo add-apt-repository 'deb http://apt.llvm.org/focal/ llvm-toolchain-focal-18 main'
+
+      - name: Install new clang-format
+        run: sudo apt-get install clang-format-18 && sudo update-alternatives --set clang-format clang-format-18
+
       - name: Check formatting
         run: python ${{ github.workspace }}/scripts/check_format.py
 
