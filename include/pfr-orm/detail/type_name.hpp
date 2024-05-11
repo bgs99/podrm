@@ -7,11 +7,11 @@ namespace pfrorm::detail {
 
 template <typename T> constexpr std::string_view wrappedTypeNameImpl() {
 #ifdef __clang__
-  return __PRETTY_FUNCTION__;
+  return static_cast<const char *>(__PRETTY_FUNCTION__);
 #elif defined(__GNUC__)
-  return __PRETTY_FUNCTION__;
+  return static_cast<const char *>(__PRETTY_FUNCTION__);
 #elif defined(_MSC_VER)
-  return __FUNCSIG__;
+  return static_cast<const char *>(__FUNCSIG__);
 #else
 #error "Unsupported compiler"
 #endif
@@ -20,14 +20,14 @@ template <typename T> constexpr std::string_view wrappedTypeNameImpl() {
 template <typename T>
 constexpr std::string_view WrappedTypeName = wrappedTypeNameImpl<T>();
 
-constexpr std::string_view voidTypeName = "void";
+constexpr std::string_view VoidTypeName = "void";
 
 constexpr std::size_t WrappedTypeNamePrefixLength =
-    wrappedTypeNameImpl<void>().find(voidTypeName);
+    wrappedTypeNameImpl<void>().find(VoidTypeName);
 
 constexpr std::size_t WrappedTypeNameSuffixLength =
     wrappedTypeNameImpl<void>().length() - WrappedTypeNamePrefixLength -
-    voidTypeName.length();
+    VoidTypeName.length();
 
 template <typename T>
 constexpr std::size_t TypeNameLength =

@@ -11,8 +11,7 @@ find_package(PostgreSQL REQUIRED)
 
 add_library(pfr-orm STATIC)
 target_compile_features(pfr-orm PUBLIC cxx_std_20)
-target_sources(pfr-orm PRIVATE lib/detail/escaping.cpp
-                               lib/detail/operations.cpp)
+target_sources(pfr-orm PRIVATE lib/detail/operations.cpp)
 target_include_directories(pfr-orm PUBLIC include)
 target_link_libraries(
   pfr-orm

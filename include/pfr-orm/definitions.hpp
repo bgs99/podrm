@@ -5,6 +5,7 @@
 #include <pfr-orm/detail/span.hpp>
 #include <pfr-orm/detail/type_name.hpp>
 
+#include <array>
 #include <cstddef>
 #include <string>
 #include <string_view>
@@ -134,7 +135,7 @@ getFieldDescriptionOfField(const std::string_view name) {
 template <detail::Reflectable T, std::size_t FieldsCount, std::size_t... Idx>
 constexpr std::array<FieldDescription, FieldsCount>
 getFieldDescriptions(std::array<std::string_view, FieldsCount> names,
-                     std::index_sequence<Idx...>) {
+                     std::index_sequence<Idx...> /*indices*/) {
   return {getFieldDescriptionOfField<boost::pfr::tuple_element_t<Idx, T>>(
       names[Idx])...};
 }

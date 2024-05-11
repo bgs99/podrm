@@ -1,10 +1,13 @@
+#include <pfr-orm/api.hpp>
+#include <pfr-orm/definitions.hpp>
+#include <pfr-orm/postges-helpers.hpp>
+
 #include "multilambda.hpp"
-#include "pfr-orm/api.hpp"
-#include "pfr-orm/definitions.hpp"
-#include "pfr-orm/postges-helpers.hpp"
 #include <cstddef>
 #include <string_view>
+#include <type_traits>
 #include <variant>
+#include <vector>
 
 #include <fmt/core.h>
 #include <fmt/format.h>
@@ -39,6 +42,7 @@ void createTableFields(const FieldDescription &description,
             toString(descr.nativeType), isPrimaryKey ? " PRIMARY KEY" : "");
         first = false;
       };
+
   const auto createCompositeField =
       [&prefixes, &connection, &appender,
        &first](const CompositeFieldDescription &descr) {

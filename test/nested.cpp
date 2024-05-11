@@ -1,6 +1,7 @@
 #include <pfr-orm/api.hpp>
 #include <pfr-orm/definitions.hpp>
 
+#include <array>
 #include <cstdint>
 
 namespace {
