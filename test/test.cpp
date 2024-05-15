@@ -27,7 +27,7 @@ struct Person {
 template <>
 constexpr auto pfrorm::EntityRegistration<Person> =
     pfrorm::EntityRegistrationData<Person>{
-        .id = PFRORM_FIELD(Person, id),
+        .id = Field<Person, &Person::id>,
         .idMode = IdMode::Auto,
     };
 

@@ -20,7 +20,7 @@ struct NotPerson {};
 template <>
 constexpr auto pfrorm::EntityRegistration<Person> =
     pfrorm::EntityRegistrationData<Person>{
-        .id = PFRORM_FIELD(Person, id),
+        .id = pfrorm::Field<Person, &Person::id>,
         .idMode = IdMode::Auto,
     };
 

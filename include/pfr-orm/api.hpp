@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
-#include <string_view>
+#include <type_traits>
 
 #include <boost/pfr.hpp>
 #include <boost/pfr/config.hpp>
@@ -28,19 +28,20 @@ template <typename T> class FieldDescriptor {
 public:
   [[nodiscard]] constexpr std::size_t get() const { return this->field; }
 
+  template <const auto T::*MemberPtr>
+  constexpr static FieldDescriptor fromMember() {
+    return FieldDescriptor{detail::getFieldIndex<T, MemberPtr>()};
+  }
+
 private:
   std::size_t field;
 
-  constexpr FieldDescriptor(const std::size_t field) : field(field) {}
-
-  template <detail::Reflectable C>
-  friend constexpr FieldDescriptor<C>
-  detail::getFieldDescriptor(const auto C::*, std::string_view);
+  constexpr explicit FieldDescriptor(const std::size_t field) : field(field) {}
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage): TODO
-#define PFRORM_FIELD(type, field)                                              \
-  ::pfrorm::detail::getFieldDescriptor(&type::field, #field)
+template <typename T, const auto T::*MemberPtr>
+constexpr FieldDescriptor<T> Field =
+    FieldDescriptor<T>::template fromMember<MemberPtr>();
 
 template <typename T> struct EntityRegistrationData {
   FieldDescriptor<T> id;
