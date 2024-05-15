@@ -39,9 +39,11 @@ private:
   constexpr explicit FieldDescriptor(const std::size_t field) : field(field) {}
 };
 
-template <typename T, const auto T::*MemberPtr>
-constexpr FieldDescriptor<T> Field =
-    FieldDescriptor<T>::template fromMember<MemberPtr>();
+template <const auto MemberPtr>
+  requires(std::is_member_pointer_v<decltype(MemberPtr)>)
+constexpr FieldDescriptor<detail::MemberPtrClass<MemberPtr>> Field =
+    FieldDescriptor<detail::MemberPtrClass<MemberPtr>>::template fromMember<
+        MemberPtr>();
 
 template <typename T> struct EntityRegistrationData {
   FieldDescriptor<T> id;

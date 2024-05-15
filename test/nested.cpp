@@ -26,7 +26,7 @@ constexpr auto pfrorm::CompositeRegistration<Composite> =
 template <>
 constexpr auto pfrorm::EntityRegistration<Entity> =
     pfrorm::EntityRegistrationData<Entity>{
-        .id = Field<Entity, &Entity::id>,
+        .id = Field<&Entity::id>,
         .idMode = IdMode::Auto,
     };
 

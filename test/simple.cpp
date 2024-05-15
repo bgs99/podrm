@@ -4,6 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <string>
+#include <type_traits>
 
 namespace {
 
@@ -20,7 +21,7 @@ struct NotPerson {};
 template <>
 constexpr auto pfrorm::EntityRegistration<Person> =
     pfrorm::EntityRegistrationData<Person>{
-        .id = pfrorm::Field<Person, &Person::id>,
+        .id = pfrorm::Field<&Person::id>,
         .idMode = IdMode::Auto,
     };
 

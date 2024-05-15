@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 #include <boost/pfr/core_name.hpp>
 
@@ -26,5 +27,20 @@ constexpr std::size_t getFieldIndex() {
 
   return static_cast<std::size_t>(it - fieldNames.cbegin());
 }
+
+template <auto MemberPtr> struct MemberPtrClassImpl {};
+
+template <typename T, auto T::*MemberPtr> struct MemberPtrClassImpl<MemberPtr> {
+  using Type = T;
+};
+
+template <typename T, const auto T::*MemberPtr>
+struct MemberPtrClassImpl<MemberPtr> {
+  using Type = T;
+};
+
+template <auto MemberPtr>
+  requires(std::is_member_pointer_v<decltype(MemberPtr)>)
+using MemberPtrClass = typename MemberPtrClassImpl<MemberPtr>::Type;
 
 } // namespace pfrorm::detail
