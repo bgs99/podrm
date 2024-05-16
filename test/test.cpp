@@ -1,3 +1,5 @@
+#include "field.hpp"
+
 #include <pfr-orm/api.hpp>
 #include <pfr-orm/definitions.hpp>
 #include <pfr-orm/postgres/operations.hpp>
@@ -27,7 +29,7 @@ struct Person {
 template <>
 constexpr auto pfrorm::EntityRegistration<Person> =
     pfrorm::EntityRegistrationData<Person>{
-        .id = Field<&Person::id>,
+        .id = test::Field<Person, &Person::id>,
         .idMode = IdMode::Auto,
     };
 

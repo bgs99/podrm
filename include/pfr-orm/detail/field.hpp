@@ -15,7 +15,7 @@
 
 namespace pfrorm::detail {
 
-template <Reflectable T, const auto T::*MemberPtr>
+template <Reflectable T, const auto MemberPtr>
 constexpr std::size_t getFieldIndex() {
   const std::string_view fieldName = SimpleMemberName<MemberPtr>;
   const std::array fieldNames = boost::pfr::names_as_array<T>();

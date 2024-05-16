@@ -39,6 +39,11 @@ private:
   constexpr explicit FieldDescriptor(const std::size_t field) : field(field) {}
 };
 
+template <typename T, const auto MemberPtr>
+  requires(std::is_member_pointer_v<decltype(MemberPtr)>)
+constexpr FieldDescriptor<T> FieldOf =
+    FieldDescriptor<T>::template fromMember<MemberPtr>();
+
 template <const auto MemberPtr>
   requires(std::is_member_pointer_v<decltype(MemberPtr)>)
 constexpr FieldDescriptor<detail::MemberPtrClass<MemberPtr>> Field =

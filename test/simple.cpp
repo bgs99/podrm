@@ -1,3 +1,5 @@
+#include "field.hpp"
+
 #include <pfr-orm/api.hpp>
 #include <pfr-orm/definitions.hpp>
 
@@ -21,7 +23,7 @@ struct NotPerson {};
 template <>
 constexpr auto pfrorm::EntityRegistration<Person> =
     pfrorm::EntityRegistrationData<Person>{
-        .id = pfrorm::Field<&Person::id>,
+        .id = test::Field<Person, &Person::id>,
         .idMode = IdMode::Auto,
     };
 
