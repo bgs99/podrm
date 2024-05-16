@@ -1,3 +1,5 @@
+#include "field.hpp"
+
 #include <pfr-orm/api.hpp>
 #include <pfr-orm/definitions.hpp>
 
@@ -26,7 +28,7 @@ constexpr auto pfrorm::CompositeRegistration<Composite> =
 template <>
 constexpr auto pfrorm::EntityRegistration<Entity> =
     pfrorm::EntityRegistrationData<Entity>{
-        .id = PFRORM_FIELD(Entity, id),
+        .id = test::Field<Entity, &Entity::id>,
         .idMode = IdMode::Auto,
     };
 

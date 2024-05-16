@@ -54,6 +54,9 @@ jobs:
       matrix:
         os:
           - ubuntu-22.04
+        compiler:
+          - g++
+          - clang++
     env:
       build_dir: ${{ github.workspace }}/build
     steps:
@@ -64,7 +67,7 @@ jobs:
         run: sudo apt-get install libfmt-dev libpq-dev
 
       - name: Configure CMake
-        run: cmake -B ${{ env.build_dir }} -S ${{ github.workspace }} -DPFR_ORM_ASAN:BOOL=ON -DPFR_ORM_TEST:BOOL=ON
+        run: CXX=${{ env.compiler }} cmake -B ${{ env.build_dir }} -S ${{ github.workspace }} -DPFR_ORM_ASAN:BOOL=ON -DPFR_ORM_TEST:BOOL=ON
 
       - name: Build tests
         run: cmake --build ${{ env.build_dir }}

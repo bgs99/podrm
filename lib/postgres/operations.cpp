@@ -6,6 +6,8 @@
 #include <pfr-orm/postgres/utils.hpp>
 
 #include <cstddef>
+#include <stdexcept>
+#include <string>
 #include <string_view>
 #include <type_traits>
 #include <variant>
@@ -25,6 +27,9 @@ std::string_view toString(const NativeType type) {
   case NativeType::String:
     return "VARCHAR";
   }
+  throw std::runtime_error{
+      "Unsupported native type " + std::to_string(static_cast<int>(type)),
+  };
 }
 
 void createTableFields(const FieldDescription &description,

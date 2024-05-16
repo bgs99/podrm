@@ -1,5 +1,6 @@
 #pragma once
 
+#include <pfr-orm/detail/member_name.hpp>
 #include <pfr-orm/detail/pfr.hpp>
 
 #include <algorithm>
@@ -8,19 +9,15 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 #include <boost/pfr/core_name.hpp>
 
-namespace pfrorm {
+namespace pfrorm::detail {
 
-template <typename T> class FieldDescriptor;
-
-namespace detail {
-
-/// @todo get rid of the field name requirement, use field member ptr
-template <Reflectable T>
-constexpr FieldDescriptor<T> getFieldDescriptor(const auto T::*const /*field*/,
-                                                std::string_view fieldName) {
+template <Reflectable T, const auto MemberPtr>
+constexpr std::size_t getFieldIndex() {
+  const std::string_view fieldName = SimpleMemberName<MemberPtr>;
   const std::array fieldNames = boost::pfr::names_as_array<T>();
   const auto it = std::find(fieldNames.cbegin(), fieldNames.cend(), fieldName);
   if (it == fieldNames.cend()) {
@@ -28,8 +25,22 @@ constexpr FieldDescriptor<T> getFieldDescriptor(const auto T::*const /*field*/,
                              std::string{fieldName});
   }
 
-  return FieldDescriptor<T>{static_cast<std::size_t>(it - fieldNames.cbegin())};
+  return static_cast<std::size_t>(it - fieldNames.cbegin());
 }
 
-} // namespace detail
-} // namespace pfrorm
+template <auto MemberPtr> struct MemberPtrClassImpl {};
+
+template <typename T, auto T::*MemberPtr> struct MemberPtrClassImpl<MemberPtr> {
+  using Type = T;
+};
+
+template <typename T, const auto T::*MemberPtr>
+struct MemberPtrClassImpl<MemberPtr> {
+  using Type = T;
+};
+
+template <auto MemberPtr>
+  requires(std::is_member_pointer_v<decltype(MemberPtr)>)
+using MemberPtrClass = typename MemberPtrClassImpl<MemberPtr>::Type;
+
+} // namespace pfrorm::detail
