@@ -7,7 +7,7 @@ IncludeCategories:
   - Regex: "^<pfr-orm/"
     CaseSensitive: true
     Priority: 1
-  - Regex: "^<(fmt/|boost/|libpq-fe\\.h>)"
+  - Regex: "^<(fmt/|boost/|libpq-fe\\.h|sqlite3\\.h>)"
     CaseSensitive: true
     Priority: 3
   - Regex: "^<"

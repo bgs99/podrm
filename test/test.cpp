@@ -2,8 +2,8 @@
 
 #include <pfr-orm/api.hpp>
 #include <pfr-orm/definitions.hpp>
-#include <pfr-orm/postgres/operations.hpp>
-#include <pfr-orm/postgres/utils.hpp>
+#include <pfr-orm/sqlite/operations.hpp>
+#include <pfr-orm/sqlite/utils.hpp>
 
 #include <cassert>
 #include <cstddef>
@@ -14,7 +14,7 @@
 
 #include <fmt/core.h>
 
-namespace pg_orm = pfrorm::postgres;
+namespace orm = pfrorm::sqlite;
 
 namespace {
 
@@ -35,15 +35,13 @@ constexpr auto pfrorm::EntityRegistration<Person> =
 
 static_assert(pfrorm::DatabaseEntity<Person>);
 
-int main(int argc, char **argv) {
-  const std::span<char *> args{argv, static_cast<std::size_t>(argc)};
-
+int main() {
   try {
-    pg_orm::Connection conn{args[1]};
+    orm::Connection conn = orm::Connection::inMemory("test");
 
-    pg_orm::createTable<Person>(conn);
+    orm::createTable<Person>(conn);
 
-    assert(!pg_orm::exists<Person>(conn));
+    assert(!orm::exists<Person>(conn));
 
     return 0;
   } catch (const std::exception &ex) {

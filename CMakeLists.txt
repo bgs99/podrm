@@ -8,16 +8,18 @@ add_subdirectory(vendor)
 
 find_package(fmt REQUIRED)
 find_package(PostgreSQL REQUIRED)
+find_package(SQLite3 REQUIRED)
 
 add_library(pfr-orm STATIC)
 target_compile_features(pfr-orm PUBLIC cxx_std_20)
-target_sources(pfr-orm PRIVATE lib/postgres/utils.cpp
-                               lib/postgres/operations.cpp)
+target_sources(
+  pfr-orm PRIVATE lib/sqlite/utils.cpp lib/sqlite/operations.cpp
+                  lib/postgres/utils.cpp lib/postgres/operations.cpp)
 target_include_directories(pfr-orm PUBLIC include)
 target_link_libraries(
   pfr-orm
   PUBLIC Boost::pfr
-  PRIVATE PostgreSQL::PostgreSQL fmt::fmt)
+  PRIVATE PostgreSQL::PostgreSQL SQLite::SQLite3 fmt::fmt)
 
 option(PFR_ORM_USE_GSL_SPAN
        "Use Microsoft.GSL for span implementation instead of std::span" OFF)
