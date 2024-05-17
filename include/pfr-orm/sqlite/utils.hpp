@@ -1,96 +1,87 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
+#include <filesystem>
+#include <memory>
+#include <optional>
+#include <stdexcept>
 #include <string_view>
 
-struct pg_conn;
-struct pg_result;
+struct sqlite3;
+struct sqlite3_stmt;
 
-namespace pfrorm::postgres {
+namespace pfrorm::sqlite {
 
-class Str {
+class Row {
 public:
-  Str(char *str) : str(str) {}
-  ~Str();
+  class InvalidRowError : public std::out_of_range {
+  public:
+    using std::out_of_range::out_of_range;
+  };
 
-  [[nodiscard]] std::string_view view() const { return str; }
-  operator std::string_view() const { return str; }
+  [[nodiscard]] int getColumnCount() const { return this->columnCount; }
 
-  Str(const Str &) = delete;
-  Str(Str &&) = delete;
-  Str &operator=(const Str &) = delete;
-  Str &operator=(Str &&) = delete;
+  /// @throws InvalidRowError if the column is outside of the range
+  [[nodiscard]] std::string_view text(int column) const;
+
+  /// @throws InvalidRowError if the column is outside of the range
+  [[nodiscard]] std::int64_t bigint(int column) const;
+
+  /// @throws InvalidRowError if the column is outside of the range
+  [[nodiscard]] bool boolean(int column) const;
 
 private:
-  char *str;
+  sqlite3_stmt *statement;
+
+  int columnCount;
+
+  friend class Result;
+
+  explicit Row(sqlite3_stmt *const statement, const int columnCount)
+      : statement(statement), columnCount(columnCount) {}
 };
 
 class Result {
 public:
-  Result(pg_result *result) : result(result) {}
-  ~Result();
+  [[nodiscard]] std::optional<Row> getRow() const {
+    if (!this->statement.has_value()) {
+      return std::nullopt;
+    }
+    return Row{statement->get(), this->columnCount};
+  }
 
-  [[nodiscard]] int status() const;
-  [[nodiscard]] std::string_view value(int row, int column) const;
+  bool nextRow();
 
-  Result(const Result &) = delete;
-  Result(Result &&) noexcept;
-  Result &operator=(const Result &) = delete;
-  Result &operator=(Result &&) = delete;
+  [[nodiscard]] int getColumnCount() const { return this->columnCount; }
 
 private:
-  pg_result *result;
+  using Statement = std::unique_ptr<sqlite3_stmt, int (*)(sqlite3_stmt *)>;
+
+  std::optional<Statement> statement;
+
+  int columnCount = 0;
+
+  friend class Connection;
+
+  explicit Result(Statement statement);
 };
 
 class Connection {
 public:
-  Connection(const std::string &connectionStr);
-  ~Connection();
+  static Connection fromRaw(sqlite3 *connection);
 
-  Connection(const Connection &) = delete;
-  Connection(Connection &&) noexcept;
-  Connection &operator=(const Connection &) = delete;
-  Connection &operator=(Connection &&) = delete;
+  static Connection inMemory(const char *name);
 
-  [[nodiscard]] Str escapeIdentifier(std::string_view identifier) const;
+  static Connection inFile(const std::filesystem::path &path);
 
-  Result execute(const std::string &statement);
+  void execute(std::string_view statement);
 
-  Result query(const std::string &statement);
+  Result query(std::string_view statement);
 
 private:
-  pg_conn *connection;
+  std::unique_ptr<sqlite3, int (*)(sqlite3 *)> connection;
+
+  explicit Connection(sqlite3 *connection);
 };
 
-struct ParameterTraits {
-  struct Parameter {
-    std::string data;
-    bool isBinary; // TODO: pass everything as binary
-  };
-
-  template <typename T> static Parameter toParam(const T &value) = delete;
-};
-
-template <>
-inline ParameterTraits::Parameter
-ParameterTraits::toParam(const uint64_t &value) {
-  return {
-      .data = std::to_string(value),
-      .isBinary = false,
-  };
-}
-
-template <>
-inline ParameterTraits::Parameter
-ParameterTraits::toParam(const std::string &value) {
-  return {
-      .data = value,
-      .isBinary = true,
-  };
-}
-
-template <typename T>
-concept AsParameter = requires { ParameterTraits::toParam<T>; };
-
-} // namespace pfrorm::postgres
+} // namespace pfrorm::sqlite
