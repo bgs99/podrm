@@ -25,7 +25,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get install libfmt-dev libpq-dev
+        run: sudo apt-get install libfmt-dev libpq-dev libsqlite3-dev
 
       - name: Configure CMake
         run: cmake -B ${{ env.build_dir }} -S ${{ github.workspace }} -DPFR_ORM_TEST:BOOL=ON
