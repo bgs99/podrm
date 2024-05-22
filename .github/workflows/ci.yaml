@@ -76,7 +76,7 @@ jobs:
         if: matrix.os == 'macos-14'
 
       - name: Install dependencies (Ubuntu)
-        run: sudo apt-get install libfmt-dev libpq-dev libsqlite3-dev
+        run: sudo apt-get install libfmt-dev libpq-dev libsqlite3-dev libmsgsl-dev
         if: matrix.os == 'ubuntu-22.04'
 
       - name: Configure CMake
