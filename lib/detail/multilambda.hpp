@@ -1,6 +1,6 @@
 #pragma once
 
-namespace pfrorm::detail {
+namespace podrm::detail {
 
 /// Invocable that overloads its call operator using call operators of the
 /// parent classes
@@ -11,4 +11,4 @@ template <typename... Ts> struct MultiLambda : Ts... {
 
 template <typename... Ts> MultiLambda(Ts...) -> MultiLambda<Ts...>;
 
-} // namespace pfrorm::detail
+} // namespace podrm::detail

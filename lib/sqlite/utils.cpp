@@ -1,4 +1,4 @@
-#include <pfr-orm/sqlite/utils.hpp>
+#include <podrm/sqlite/utils.hpp>
 
 #include <cassert>
 #include <cstdint>
@@ -12,7 +12,7 @@
 #include <fmt/core.h>
 #include <sqlite3.h>
 
-namespace pfrorm::sqlite {
+namespace podrm::sqlite {
 
 namespace {
 
@@ -133,4 +133,4 @@ Result Connection::query(const std::string_view statement) {
   return Result{{stmt.release(), &sqlite3_finalize}};
 }
 
-} // namespace pfrorm::sqlite
+} // namespace podrm::sqlite

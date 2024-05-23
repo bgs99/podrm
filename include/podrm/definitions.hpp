@@ -1,9 +1,9 @@
 #pragma once
 
-#include <pfr-orm/api.hpp>
-#include <pfr-orm/detail/pfr.hpp>
-#include <pfr-orm/detail/span.hpp>
-#include <pfr-orm/detail/type_name.hpp>
+#include <podrm/api.hpp>
+#include <podrm/detail/pfr.hpp>
+#include <podrm/detail/span.hpp>
+#include <podrm/detail/type_name.hpp>
 
 #include <array>
 #include <cstddef>
@@ -17,7 +17,7 @@
 #include <boost/pfr/core_name.hpp>
 #include <boost/pfr/tuple_size.hpp>
 
-namespace pfrorm {
+namespace podrm {
 
 struct PrimitiveFieldDescription {
   NativeType nativeType;
@@ -157,4 +157,4 @@ constexpr EntityDescription DatabaseEntityDescription{
     .primaryKey = EntityRegistration<T>.id.get(),
 };
 
-} // namespace pfrorm
+} // namespace podrm

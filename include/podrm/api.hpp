@@ -1,7 +1,7 @@
 #pragma once
 
-#include <pfr-orm/detail/field.hpp>
-#include <pfr-orm/detail/pfr.hpp>
+#include <podrm/detail/field.hpp>
+#include <podrm/detail/pfr.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -16,7 +16,7 @@ static_assert(BOOST_PFR_ENABLED, "Boost.PFR is not supported, cannot build");
 static_assert(BOOST_PFR_CORE_NAME_ENABLED,
               "Boost.PFR does not support field name extraction, cannot build");
 
-namespace pfrorm {
+namespace podrm {
 
 /// Identifier mode
 enum class IdMode : std::uint8_t {
@@ -99,4 +99,4 @@ inline constexpr auto ValueRegistration<std::string> =
 /// Tag to be used with boost::pfr::is_reflectable*
 struct ReflectionTag;
 
-} // namespace pfrorm
+} // namespace podrm

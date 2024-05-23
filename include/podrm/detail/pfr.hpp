@@ -2,9 +2,9 @@
 
 #include <boost/pfr/traits.hpp>
 
-namespace pfrorm::detail {
+namespace podrm::detail {
 
 template <typename T>
 concept Reflectable = boost::pfr::is_implicitly_reflectable_v<T, void>;
 
-} // namespace pfrorm::detail
+} // namespace podrm::detail

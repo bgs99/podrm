@@ -7,7 +7,7 @@
 #include <span>
 #endif
 
-namespace pfrorm::detail {
+namespace podrm::detail {
 
 #ifdef PFR_ORM_USE_GSL_SPAN
 template <typename T> using span = gsl::span<T>;
@@ -15,4 +15,4 @@ template <typename T> using span = gsl::span<T>;
 template <typename T> using span = std::span<T>;
 #endif
 
-} // namespace pfrorm::detail
+} // namespace podrm::detail

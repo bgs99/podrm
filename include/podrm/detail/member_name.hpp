@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <string_view>
 
-namespace pfrorm::detail {
+namespace podrm::detail {
 
 template <const auto MemberPtr>
 constexpr std::string_view wrappedMemberNameImpl() {
@@ -57,4 +57,4 @@ template <const auto MemberPtr>
 constexpr std::string_view SimpleMemberName =
     simplifyMemberName(MemberName<MemberPtr>);
 
-} // namespace pfrorm::detail
+} // namespace podrm::detail

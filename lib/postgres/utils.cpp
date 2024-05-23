@@ -1,4 +1,4 @@
-#include <pfr-orm/postgres/utils.hpp>
+#include <podrm/postgres/utils.hpp>
 
 #include <stdexcept>
 #include <string>
@@ -7,7 +7,7 @@
 #include <fmt/core.h>
 #include <libpq-fe.h>
 
-namespace pfrorm::postgres {
+namespace podrm::postgres {
 
 Str::~Str() { PQfreemem(this->str); }
 
@@ -66,4 +66,4 @@ Result Connection::query(const std::string &statement) {
   return result;
 }
 
-} // namespace pfrorm::postgres
+} // namespace podrm::postgres

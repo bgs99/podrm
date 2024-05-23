@@ -1,12 +1,12 @@
 #pragma once
 
-#include <pfr-orm/definitions.hpp>
-#include <pfr-orm/postgres/utils.hpp>
+#include <podrm/definitions.hpp>
+#include <podrm/sqlite/utils.hpp>
 
-namespace pfrorm::postgres::detail {
+namespace podrm::sqlite::detail {
 
 void createTable(Connection &connection, const EntityDescription &entity);
 
 bool exists(Connection &connection, const EntityDescription &entity);
 
-} // namespace pfrorm::postgres::detail
+} // namespace podrm::sqlite::detail

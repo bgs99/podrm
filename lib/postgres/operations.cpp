@@ -1,9 +1,9 @@
 #include "../detail/multilambda.hpp"
 #include "formatters.hpp" // IWYU pragma: keep
 
-#include <pfr-orm/api.hpp>
-#include <pfr-orm/definitions.hpp>
-#include <pfr-orm/postgres/utils.hpp>
+#include <podrm/api.hpp>
+#include <podrm/definitions.hpp>
+#include <podrm/postgres/utils.hpp>
 
 #include <cstddef>
 #include <stdexcept>
@@ -16,7 +16,7 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 
-namespace pfrorm::postgres::detail {
+namespace podrm::postgres::detail {
 
 namespace {
 
@@ -58,7 +58,7 @@ void createTableFields(const FieldDescription &description,
         }
       };
 
-  const pfrorm::detail::MultiLambda createField{
+  const podrm::detail::MultiLambda createField{
       createPrimitiveField,
       createCompositeField,
   };
@@ -96,4 +96,4 @@ bool exists(Connection &connection, const EntityDescription &entity) {
   return result.value(0, 0)[0] == 't';
 }
 
-} // namespace pfrorm::postgres::detail
+} // namespace podrm::postgres::detail

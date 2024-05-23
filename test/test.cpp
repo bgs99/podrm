@@ -1,9 +1,9 @@
 #include "field.hpp"
 
-#include <pfr-orm/api.hpp>
-#include <pfr-orm/definitions.hpp>
-#include <pfr-orm/sqlite/operations.hpp>
-#include <pfr-orm/sqlite/utils.hpp>
+#include <podrm/api.hpp>
+#include <podrm/definitions.hpp>
+#include <podrm/sqlite/operations.hpp>
+#include <podrm/sqlite/utils.hpp>
 
 #include <cassert>
 #include <cstddef>
@@ -14,7 +14,7 @@
 
 #include <fmt/core.h>
 
-namespace orm = pfrorm::sqlite;
+namespace orm = podrm::sqlite;
 
 namespace {
 
@@ -27,13 +27,13 @@ struct Person {
 } // namespace
 
 template <>
-constexpr auto pfrorm::EntityRegistration<Person> =
-    pfrorm::EntityRegistrationData<Person>{
+constexpr auto podrm::EntityRegistration<Person> =
+    podrm::EntityRegistrationData<Person>{
         .id = test::Field<Person, &Person::id>,
         .idMode = IdMode::Auto,
     };
 
-static_assert(pfrorm::DatabaseEntity<Person>);
+static_assert(podrm::DatabaseEntity<Person>);
 
 int main() {
   try {

@@ -1,7 +1,7 @@
 #include "field.hpp"
 
-#include <pfr-orm/api.hpp>
-#include <pfr-orm/definitions.hpp>
+#include <podrm/api.hpp>
+#include <podrm/definitions.hpp>
 
 #include <array>
 #include <cstdint>
@@ -22,65 +22,65 @@ struct Entity {
 } // namespace
 
 template <>
-constexpr auto pfrorm::CompositeRegistration<Composite> =
+constexpr auto podrm::CompositeRegistration<Composite> =
     CompositeRegistrationData<Composite>{};
 
 template <>
-constexpr auto pfrorm::EntityRegistration<Entity> =
-    pfrorm::EntityRegistrationData<Entity>{
+constexpr auto podrm::EntityRegistration<Entity> =
+    podrm::EntityRegistrationData<Entity>{
         .id = test::Field<Entity, &Entity::id>,
         .idMode = IdMode::Auto,
     };
 
 namespace {
 
-static_assert(pfrorm::DatabaseComposite<Composite>);
-static_assert(pfrorm::DatabaseEntity<Entity>);
-static_assert(not pfrorm::DatabaseEntity<Composite>);
-static_assert(not pfrorm::DatabaseComposite<Entity>);
+static_assert(podrm::DatabaseComposite<Composite>);
+static_assert(podrm::DatabaseEntity<Entity>);
+static_assert(not podrm::DatabaseEntity<Composite>);
+static_assert(not podrm::DatabaseComposite<Entity>);
 
-constexpr pfrorm::EntityDescription EntityDescription =
-    pfrorm::DatabaseEntityDescription<Entity>;
+constexpr podrm::EntityDescription EntityDescription =
+    podrm::DatabaseEntityDescription<Entity>;
 
 constexpr std::array ExpectedCompositeFields = {
-    pfrorm::FieldDescription{
+    podrm::FieldDescription{
         .name = "a",
         .field =
-            pfrorm::PrimitiveFieldDescription{
-                .nativeType = pfrorm::NativeType::BigInt,
+            podrm::PrimitiveFieldDescription{
+                .nativeType = podrm::NativeType::BigInt,
             },
     },
-    pfrorm::FieldDescription{
+    podrm::FieldDescription{
         .name = "b",
         .field =
-            pfrorm::PrimitiveFieldDescription{
-                .nativeType = pfrorm::NativeType::BigInt,
+            podrm::PrimitiveFieldDescription{
+                .nativeType = podrm::NativeType::BigInt,
             },
     },
 };
 
-constexpr pfrorm::CompositeFieldDescription ExpectedCompositeDescription = {
+constexpr podrm::CompositeFieldDescription ExpectedCompositeDescription = {
     .fields = ExpectedCompositeFields,
 };
 
 constexpr std::array ExpectedEntityFields = {
-    pfrorm::FieldDescription{
+    podrm::FieldDescription{
         .name = "id",
         .field =
-            pfrorm::PrimitiveFieldDescription{
-                .nativeType = pfrorm::NativeType::BigInt,
+            podrm::PrimitiveFieldDescription{
+                .nativeType = podrm::NativeType::BigInt,
             },
     },
-    pfrorm::FieldDescription{
+    podrm::FieldDescription{
         .name = "composite",
         .field =
-            pfrorm::CompositeFieldDescription{
+            podrm::CompositeFieldDescription{
                 .fields = ExpectedCompositeFields,
             },
     },
 };
 
-constexpr pfrorm::EntityDescription ExpectedEntityDescription = {
+constexpr podrm::EntityDescription ExpectedEntityDescription = {
     .name = "Entity",
     .fields = ExpectedEntityFields,
     .primaryKey = 0,

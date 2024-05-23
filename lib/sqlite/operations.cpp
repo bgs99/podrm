@@ -1,9 +1,9 @@
 #include "../detail/multilambda.hpp"
 
-#include <pfr-orm/api.hpp>
-#include <pfr-orm/definitions.hpp>
-#include <pfr-orm/sqlite/detail/operations.hpp>
-#include <pfr-orm/sqlite/utils.hpp>
+#include <podrm/api.hpp>
+#include <podrm/definitions.hpp>
+#include <podrm/sqlite/detail/operations.hpp>
+#include <podrm/sqlite/utils.hpp>
 
 #include <cstddef>
 #include <stdexcept>
@@ -16,7 +16,7 @@
 #include <fmt/core.h>
 #include <fmt/format.h>
 
-namespace pfrorm::sqlite::detail {
+namespace podrm::sqlite::detail {
 
 namespace {
 
@@ -54,7 +54,7 @@ void createTableFields(const FieldDescription &description,
         }
       };
 
-  const pfrorm::detail::MultiLambda createField{
+  const podrm::detail::MultiLambda createField{
       createPrimitiveField,
       createCompositeField,
   };
@@ -90,4 +90,4 @@ bool exists(Connection &connection, const EntityDescription &entity) {
   return result.getRow()->boolean(0);
 }
 
-} // namespace pfrorm::sqlite::detail
+} // namespace podrm::sqlite::detail

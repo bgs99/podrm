@@ -7,7 +7,7 @@
 struct pg_conn;
 struct pg_result;
 
-namespace pfrorm::postgres {
+namespace podrm::postgres {
 
 class Str {
 public:
@@ -93,4 +93,4 @@ ParameterTraits::toParam(const std::string &value) {
 template <typename T>
 concept AsParameter = requires { ParameterTraits::toParam<T>; };
 
-} // namespace pfrorm::postgres
+} // namespace podrm::postgres
