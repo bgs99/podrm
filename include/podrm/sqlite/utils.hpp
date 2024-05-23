@@ -10,7 +10,7 @@
 struct sqlite3;
 struct sqlite3_stmt;
 
-namespace pfrorm::sqlite {
+namespace podrm::sqlite {
 
 class Row {
 public:
@@ -84,4 +84,4 @@ private:
   explicit Connection(sqlite3 *connection);
 };
 
-} // namespace pfrorm::sqlite
+} // namespace podrm::sqlite

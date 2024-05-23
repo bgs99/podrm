@@ -4,7 +4,7 @@ IncludeBlocks: Regroup
 IncludeCategories:
   - Regex: "^\""
     Priority: 0
-  - Regex: "^<pfr-orm/"
+  - Regex: "^<podrm/"
     CaseSensitive: true
     Priority: 1
   - Regex: "^<(fmt/|boost/|libpq-fe\\.h|sqlite3\\.h>)"

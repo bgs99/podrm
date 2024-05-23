@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <string_view>
 
-namespace pfrorm::detail {
+namespace podrm::detail {
 
 template <typename T> constexpr std::string_view wrappedTypeNameImpl() {
 #ifdef __clang__
@@ -50,4 +50,4 @@ constexpr std::string_view simplifyTypeName(std::string_view name) {
 template <typename T>
 constexpr std::string_view SimpleTypeName = simplifyTypeName(TypeName<T>);
 
-} // namespace pfrorm::detail
+} // namespace podrm::detail

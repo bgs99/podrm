@@ -1,10 +1,10 @@
 #pragma once
 
-#include <pfr-orm/definitions.hpp>
-#include <pfr-orm/sqlite/detail/operations.hpp>
-#include <pfr-orm/sqlite/utils.hpp>
+#include <podrm/definitions.hpp>
+#include <podrm/postgres/detail/operations.hpp>
+#include <podrm/postgres/utils.hpp>
 
-namespace pfrorm::sqlite {
+namespace podrm::postgres {
 
 template <DatabaseEntity T> void createTable(Connection &connection) {
   return detail::createTable(connection, DatabaseEntityDescription<T>);
@@ -14,4 +14,4 @@ template <typename T> bool exists(Connection &connection) {
   return detail::exists(connection, DatabaseEntityDescription<T>);
 }
 
-} // namespace pfrorm::sqlite
+} // namespace podrm::postgres

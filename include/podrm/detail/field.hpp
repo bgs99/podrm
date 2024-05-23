@@ -1,7 +1,7 @@
 #pragma once
 
-#include <pfr-orm/detail/member_name.hpp>
-#include <pfr-orm/detail/pfr.hpp>
+#include <podrm/detail/member_name.hpp>
+#include <podrm/detail/pfr.hpp>
 
 #include <algorithm>
 #include <array>
@@ -13,7 +13,7 @@
 
 #include <boost/pfr/core_name.hpp>
 
-namespace pfrorm::detail {
+namespace podrm::detail {
 
 template <Reflectable T, const auto MemberPtr>
 constexpr std::size_t getFieldIndex() {
@@ -43,4 +43,4 @@ template <auto MemberPtr>
   requires(std::is_member_pointer_v<decltype(MemberPtr)>)
 using MemberPtrClass = typename MemberPtrClassImpl<MemberPtr>::Type;
 
-} // namespace pfrorm::detail
+} // namespace podrm::detail

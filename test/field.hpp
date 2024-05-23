@@ -1,15 +1,15 @@
 #pragma once
 
-#include <pfr-orm/api.hpp>
+#include <podrm/api.hpp>
 
-namespace pfrorm::test {
+namespace podrm::test {
 
 template <typename T, const auto MemberPtr>
 constexpr auto Field =
 #ifdef PFR_TEST_USE_FIELD_OF
-    ::pfrorm::FieldOf<T, MemberPtr>;
+    ::podrm::FieldOf<T, MemberPtr>;
 #else
-    ::pfrorm::Field<MemberPtr>;
+    ::podrm::Field<MemberPtr>;
 #endif
 
-} // namespace pfrorm::test
+} // namespace podrm::test
