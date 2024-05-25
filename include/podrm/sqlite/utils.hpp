@@ -1,11 +1,15 @@
 #pragma once
 
+#include "podrm/detail/span.hpp"
+
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string_view>
+#include <variant>
 
 struct sqlite3;
 struct sqlite3_stmt;
@@ -66,6 +70,9 @@ private:
   explicit Result(Statement statement);
 };
 
+using Value = std::variant<detail::span<std::byte>, double, std::int64_t,
+                           std::string_view>;
+
 class Connection {
 public:
   static Connection fromRaw(sqlite3 &connection);
@@ -74,9 +81,9 @@ public:
 
   static Connection inFile(const std::filesystem::path &path);
 
-  void execute(std::string_view statement);
+  void execute(std::string_view statement, detail::span<const Value> args = {});
 
-  Result query(std::string_view statement);
+  Result query(std::string_view statement, detail::span<const Value> args = {});
 
 private:
   std::unique_ptr<sqlite3, int (*)(sqlite3 *)> connection;

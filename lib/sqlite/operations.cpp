@@ -5,7 +5,9 @@
 #include <podrm/sqlite/detail/operations.hpp>
 #include <podrm/sqlite/utils.hpp>
 
+#include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -67,6 +69,56 @@ void createTableFields(const FieldDescription &description,
   std::visit(createField, description.field);
 }
 
+void createParamPlaceholders(const FieldDescription description,
+                             fmt::appender &appender, bool &first) {
+  const auto createPrimitive = [&appender,
+                                &first](const PrimitiveFieldDescription) {
+    fmt::format_to(appender, "{}?", first ? "" : ",");
+    first = false;
+  };
+
+  const auto createComposite = [&appender,
+                                &first](const CompositeFieldDescription descr) {
+    for (const FieldDescription field : descr.fields) {
+      createParamPlaceholders(field, appender, first);
+    }
+  };
+
+  std::visit(podrm::detail::MultiLambda{createPrimitive, createComposite},
+             description.field);
+}
+
+std::vector<Value> intoArgs(const FieldDescription description, void *field) {
+  const auto createPrimitive =
+      [field](
+          const PrimitiveFieldDescription description) -> std::vector<Value> {
+    switch (description.nativeType) {
+    case NativeType::BigInt:
+      return {*static_cast<const std::int64_t *>(field)};
+    case NativeType::String:
+      return {*static_cast<const std::string *>(field)};
+    }
+    assert(false);
+  };
+
+  const auto createComposite =
+      [field](const CompositeFieldDescription descr) -> std::vector<Value> {
+    std::vector<Value> values;
+    for (const FieldDescription fieldDescr : descr.fields) {
+      for (const Value value :
+           intoArgs(fieldDescr, fieldDescr.memberPtr(field))) {
+        values.emplace_back(value);
+      }
+    }
+
+    return values;
+  };
+
+  return std::visit(
+      podrm::detail::MultiLambda{createPrimitive, createComposite},
+      description.field);
+}
+
 } // namespace
 
 void createTable(Connection &connection, const EntityDescription &entity) {
@@ -87,7 +139,33 @@ void createTable(Connection &connection, const EntityDescription &entity) {
 bool exists(Connection &connection, const EntityDescription &entity) {
   const Result result = connection.query(
       fmt::format("SELECT EXISTS(SELECT 1 FROM '{}')", entity.name));
-  return result.getRow()->boolean(0);
+  // NOLINTNEXTLINE(bugprone-unchecked-optional-access): fixed query
+  return result.getRow().value().boolean(0);
+}
+
+void persist(Connection &connection, const EntityDescription &description,
+             void *entity) {
+  fmt::memory_buffer buf;
+  fmt::appender appender{buf};
+
+  fmt::format_to(appender, "INSERT INTO '{}' VALUES (", description.name);
+
+  bool first = true;
+  std::vector<Value> values;
+  for (std::size_t i = 0; i < description.fields.size(); ++i) {
+    if (description.idMode == IdMode::Auto && i == description.primaryKey) {
+      // TODO: support auto ids
+    }
+    createParamPlaceholders(description.fields[i], appender, first);
+
+    for (const Value value : intoArgs(
+             description.fields[i], description.fields[i].memberPtr(entity))) {
+      values.emplace_back(value);
+    }
+  }
+  fmt::format_to(appender, ")");
+
+  connection.execute(fmt::to_string(buf), values);
 }
 
 } // namespace podrm::sqlite::detail

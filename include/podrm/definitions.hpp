@@ -39,6 +39,7 @@ struct FieldDescription {
 };
 
 struct EntityDescription {
+  IdMode idMode;
   std::string_view name;
   detail::span<const FieldDescription> fields;
   std::size_t primaryKey;
@@ -120,6 +121,7 @@ getFieldDescriptions() {
 
 template <DatabaseEntity T>
 constexpr EntityDescription DatabaseEntityDescription{
+    .idMode = EntityRegistration<T>.idMode,
     .name = detail::SimpleTypeName<T>,
     .fields = detail::FieldDescriptions<T>,
     .primaryKey = EntityRegistration<T>.id.get(),

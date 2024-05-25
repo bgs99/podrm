@@ -1,6 +1,10 @@
+#include "../detail/multilambda.hpp"
+
+#include <podrm/detail/span.hpp>
 #include <podrm/sqlite/utils.hpp>
 
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -8,6 +12,7 @@
 #include <stdexcept>
 #include <string_view>
 #include <utility>
+#include <variant>
 
 #include <fmt/core.h>
 #include <sqlite3.h>
@@ -32,6 +37,26 @@ Statement createStatement(sqlite3 &connection,
   }
 
   return Statement{stmt};
+}
+
+void bindArg(const Statement &statement, const int pos, const Value value) {
+  const auto bindBlob = [&statement, pos](const detail::span<std::byte> blob) {
+    sqlite3_bind_blob64(statement.get(), pos, blob.data(), blob.size(),
+                        SQLITE_STATIC);
+  };
+  const auto bindDouble = [&statement, pos](const double value) {
+    sqlite3_bind_double(statement.get(), pos + 1, value);
+  };
+  const auto bindInt = [&statement, pos](const std::int64_t value) {
+    sqlite3_bind_int64(statement.get(), pos + 1, value);
+  };
+  const auto bindText = [&statement, pos](const std::string_view text) {
+    sqlite3_bind_text64(statement.get(), pos + 1, text.data(), text.size(),
+                        SQLITE_STATIC, SQLITE_UTF8);
+  };
+
+  std::visit(detail::MultiLambda{bindBlob, bindDouble, bindInt, bindText},
+             value);
 }
 
 } // namespace
@@ -118,8 +143,13 @@ Connection Connection::inFile(const std::filesystem::path &path) {
   return Connection{*connection};
 }
 
-void Connection::execute(const std::string_view statement) {
-  Statement stmt = createStatement(*this->connection, statement);
+void Connection::execute(const std::string_view statement,
+                         const detail::span<const Value> args) {
+  const Statement stmt = createStatement(*this->connection, statement);
+
+  for (int i = 0; i < args.size(); ++i) {
+    bindArg(stmt, i, args[i]);
+  }
 
   const int executeResult = sqlite3_step(stmt.get());
   if (executeResult != SQLITE_DONE) {
@@ -127,8 +157,13 @@ void Connection::execute(const std::string_view statement) {
   }
 }
 
-Result Connection::query(const std::string_view statement) {
+Result Connection::query(const std::string_view statement,
+                         const detail::span<const Value> args) {
   Statement stmt = createStatement(*this->connection, statement);
+
+  for (int i = 0; i < args.size(); ++i) {
+    bindArg(stmt, i, args[i]);
+  }
 
   return Result{{stmt.release(), &sqlite3_finalize}};
 }
