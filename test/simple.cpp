@@ -1,3 +1,4 @@
+#include "comparisons.hpp"
 #include "field.hpp"
 
 #include <podrm/api.hpp>
