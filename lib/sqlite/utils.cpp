@@ -21,14 +21,14 @@ using Statement =
                       sqlite3_finalize(statement);
                     })>;
 
-Statement createStatement(sqlite3 *const connection,
+Statement createStatement(sqlite3 &connection,
                           const std::string_view statement) {
   sqlite3_stmt *stmt = nullptr;
   const int result =
-      sqlite3_prepare_v3(connection, statement.data(),
+      sqlite3_prepare_v3(&connection, statement.data(),
                          static_cast<int>(statement.size()), 0, &stmt, nullptr);
   if (result != SQLITE_OK) {
-    throw std::runtime_error{sqlite3_errmsg(connection)};
+    throw std::runtime_error{sqlite3_errmsg(&connection)};
   }
 
   return Statement{stmt};
@@ -119,7 +119,7 @@ Connection Connection::inFile(const std::filesystem::path &path) {
 }
 
 void Connection::execute(const std::string_view statement) {
-  Statement stmt = createStatement(this->connection.get(), statement);
+  Statement stmt = createStatement(*this->connection, statement);
 
   const int executeResult = sqlite3_step(stmt.get());
   if (executeResult != SQLITE_DONE) {
@@ -128,7 +128,7 @@ void Connection::execute(const std::string_view statement) {
 }
 
 Result Connection::query(const std::string_view statement) {
-  Statement stmt = createStatement(this->connection.get(), statement);
+  Statement stmt = createStatement(*this->connection, statement);
 
   return Result{{stmt.release(), &sqlite3_finalize}};
 }
