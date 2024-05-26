@@ -87,10 +87,10 @@ bool Result::nextRow() {
   return true;
 }
 
-Connection::Connection(sqlite3 *const connection)
-    : connection(connection, &sqlite3_close_v2) {}
+Connection::Connection(sqlite3 &connection)
+    : connection(&connection, &sqlite3_close_v2) {}
 
-Connection Connection::fromRaw(sqlite3 *const connection) {
+Connection Connection::fromRaw(sqlite3 &connection) {
   return Connection{connection};
 }
 
@@ -103,7 +103,7 @@ Connection Connection::inMemory(const char *const name) {
     throw std::runtime_error{sqlite3_errstr(result)};
   }
 
-  return Connection{connection};
+  return Connection{*connection};
 }
 
 Connection Connection::inFile(const std::filesystem::path &path) {
@@ -115,7 +115,7 @@ Connection Connection::inFile(const std::filesystem::path &path) {
     throw std::runtime_error{sqlite3_errstr(result)};
   }
 
-  return Connection{connection};
+  return Connection{*connection};
 }
 
 void Connection::execute(const std::string_view statement) {
