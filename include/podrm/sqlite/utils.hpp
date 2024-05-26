@@ -68,7 +68,7 @@ private:
 
 class Connection {
 public:
-  static Connection fromRaw(sqlite3 *connection);
+  static Connection fromRaw(sqlite3 &connection);
 
   static Connection inMemory(const char *name);
 
@@ -81,7 +81,7 @@ public:
 private:
   std::unique_ptr<sqlite3, int (*)(sqlite3 *)> connection;
 
-  explicit Connection(sqlite3 *connection);
+  explicit Connection(sqlite3 &connection);
 };
 
 } // namespace podrm::sqlite
