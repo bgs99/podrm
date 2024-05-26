@@ -27,7 +27,7 @@ jobs:
         run: sudo apt-get install libfmt-dev libpq-dev libsqlite3-dev
 
       - name: Configure CMake
-        run: cmake -B ${{ env.build_dir }} -S ${{ github.workspace }} -DPFR_ORM_TEST:BOOL=ON
+        run: cmake -B ${{ env.build_dir }} -S ${{ github.workspace }}
 
       - name: Run clang-tidy
         run: python ${{ github.workspace }}/scripts/tidy.py --clang-tidy=run-clang-tidy-18 --compile-commands=${{ env.build_dir }}
@@ -52,7 +52,7 @@ jobs:
         run: sudo apt-get install libfmt-dev libpq-dev libsqlite3-dev
 
       - name: Configure CMake
-        run: CXX=${{ env.compiler }} cmake -B ${{ env.build_dir }} -S ${{ github.workspace }} -DPFR_ORM_ASAN:BOOL=ON -DPFR_ORM_TEST:BOOL=ON
+        run: CXX=${{ env.compiler }} cmake -B ${{ env.build_dir }} -S ${{ github.workspace }} -DPFR_ORM_ASAN:BOOL=ON
 
       - name: Build tests
         run: cmake --build ${{ env.build_dir }}
@@ -80,7 +80,7 @@ jobs:
         if: matrix.os == 'ubuntu-22.04'
 
       - name: Configure CMake
-        run: cmake -B ${{ env.build_dir }} -S ${{ github.workspace }} -DPFR_ORM_ASAN:BOOL=ON -DPFR_ORM_TEST:BOOL=ON -DPFR_ORM_USE_GSL_SPAN:BOOL=ON
+        run: cmake -B ${{ env.build_dir }} -S ${{ github.workspace }} -DPFR_ORM_ASAN:BOOL=ON -DPFR_ORM_USE_GSL_SPAN:BOOL=ON
 
       - name: Build tests
         run: cmake --build ${{ env.build_dir }}
