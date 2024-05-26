@@ -39,6 +39,6 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 
   include(CTest)
   if(BUILD_TESTING)
-    add_subdirectory(tests)
+    add_subdirectory(test)
   endif()
 endif()
