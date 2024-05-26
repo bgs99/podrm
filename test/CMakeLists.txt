@@ -17,3 +17,5 @@ target_link_libraries(${PROJECT_NAME} podrm fmt::fmt)
 if(PFR_TEST_USE_FIELD_OF)
   target_compile_definitions(${PROJECT_NAME} PRIVATE -DPFR_TEST_USE_FIELD_OF)
 endif()
+
+add_test(${PROJECT_NAME} ${PROJECT_NAME})
