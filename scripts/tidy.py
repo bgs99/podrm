@@ -3,6 +3,7 @@
 from pathlib import Path
 import subprocess
 import argparse
+import sys
 
 from common.project import cpp_files
 
@@ -20,5 +21,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    subprocess.run([args.clang_tidy, '-quiet', '-p', args.compile_commands.as_posix(),
-                    *[file.as_posix() for file in cpp_files()]])
+    sys.exit(subprocess.run([args.clang_tidy, '-quiet', '-warnings-as-errors', '*', '-p', args.compile_commands.as_posix(),
+                             *[file.as_posix() for file in cpp_files()]], shell=False).returncode)
