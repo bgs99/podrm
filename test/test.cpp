@@ -6,10 +6,8 @@
 #include <podrm/sqlite/utils.hpp>
 
 #include <cassert>
-#include <cstddef>
 #include <cstdint>
 #include <exception>
-#include <span>
 #include <string>
 
 #include <fmt/core.h>
@@ -42,6 +40,15 @@ int main() {
     orm::createTable<Person>(conn);
 
     assert(!orm::exists<Person>(conn));
+
+    Person person{
+        .id = 42,
+        .name = "Alex",
+    };
+
+    orm::persist(conn, person);
+
+    assert(orm::exists<Person>(conn));
 
     return 0;
   } catch (const std::exception &ex) {

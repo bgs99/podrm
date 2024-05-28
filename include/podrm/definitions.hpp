@@ -21,9 +21,6 @@ namespace podrm {
 
 struct PrimitiveFieldDescription {
   NativeType nativeType;
-
-  friend constexpr bool operator==(PrimitiveFieldDescription,
-                                   PrimitiveFieldDescription) = default;
 };
 
 struct FieldDescription;
@@ -32,56 +29,21 @@ struct CompositeFieldDescription {
   detail::span<const FieldDescription> fields;
 };
 
+using MemberPtrFn = void *(*)(void *);
+
 struct FieldDescription {
   std::string_view name;
-  std::variant<PrimitiveFieldDescription, CompositeFieldDescription> field;
 
-  friend constexpr bool operator==(FieldDescription,
-                                   FieldDescription) = default;
+  MemberPtrFn memberPtr;
+  std::variant<PrimitiveFieldDescription, CompositeFieldDescription> field;
 };
 
-constexpr bool operator==(CompositeFieldDescription lhs,
-                          CompositeFieldDescription rhs) {
-  if (lhs.fields.size() != rhs.fields.size()) {
-    return false;
-  }
-
-  for (std::size_t i = 0; i < lhs.fields.size(); ++i) {
-    if (lhs.fields[i] != rhs.fields[i]) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 struct EntityDescription {
+  IdMode idMode;
   std::string_view name;
   detail::span<const FieldDescription> fields;
   std::size_t primaryKey;
 };
-
-constexpr bool operator==(EntityDescription lhs, EntityDescription rhs) {
-  if (lhs.name != rhs.name) {
-    return false;
-  }
-
-  if (lhs.primaryKey != rhs.primaryKey) {
-    return false;
-  }
-
-  if (lhs.fields.size() != rhs.fields.size()) {
-    return false;
-  }
-
-  for (std::size_t i = 0; i < lhs.fields.size(); ++i) {
-    if (lhs.fields[i] != rhs.fields[i]) {
-      return false;
-    }
-  }
-
-  return true;
-}
 
 template <typename T>
 concept DatabaseEntity =
@@ -109,9 +71,11 @@ constexpr std::array<FieldDescription, boost::pfr::tuple_size_v<T>>
 
 template <DatabasePrimitive Field>
 constexpr FieldDescription
-getFieldDescriptionOfField(const std::string_view name) {
+getFieldDescriptionOfField(const std::string_view name,
+                           const MemberPtrFn memberPtr) {
   return FieldDescription{
       .name{name},
+      .memberPtr = memberPtr,
       .field =
           PrimitiveFieldDescription{
               .nativeType = ValueRegistration<Field>.nativeType,
@@ -122,9 +86,11 @@ getFieldDescriptionOfField(const std::string_view name) {
 template <DatabaseComposite Field>
   requires(not DatabasePrimitive<Field>)
 constexpr FieldDescription
-getFieldDescriptionOfField(const std::string_view name) {
+getFieldDescriptionOfField(const std::string_view name,
+                           const MemberPtrFn memberPtr) {
   return FieldDescription{
       .name{name},
+      .memberPtr = memberPtr,
       .field =
           CompositeFieldDescription{
               .fields = FieldDescriptions<Field>,
@@ -137,7 +103,10 @@ constexpr std::array<FieldDescription, FieldsCount>
 getFieldDescriptions(std::array<std::string_view, FieldsCount> names,
                      std::index_sequence<Idx...> /*indices*/) {
   return {getFieldDescriptionOfField<boost::pfr::tuple_element_t<Idx, T>>(
-      names[Idx])...};
+      names[Idx], [](void *data) -> void * {
+        T &instance = *static_cast<T *>(data);
+        return &boost::pfr::get<Idx>(instance);
+      })...};
 }
 
 template <detail::Reflectable T>
@@ -152,6 +121,7 @@ getFieldDescriptions() {
 
 template <DatabaseEntity T>
 constexpr EntityDescription DatabaseEntityDescription{
+    .idMode = EntityRegistration<T>.idMode,
     .name = detail::SimpleTypeName<T>,
     .fields = detail::FieldDescriptions<T>,
     .primaryKey = EntityRegistration<T>.id.get(),
