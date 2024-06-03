@@ -35,7 +35,7 @@ std::optional<Entity> find(Connection &connection,
 }
 
 template <DatabaseEntity Entity>
-void erase(Connection &connection, const std::int64_t key) {
+void erase(Connection &connection, const PrimaryKeyType<Entity> & key) {
   detail::erase(connection, DatabaseEntityDescription<Entity>, key);
 }
 
