@@ -73,6 +73,10 @@ int main(const int argc, const char **argv) {
       assert(person->name == "Alex");
     }
 
+    orm::erase<Person>(conn, 42);
+
+    assert(!orm::exists<Person>(conn));
+
     return 0;
   } catch (const std::exception &ex) {
     fmt::print("{}\n", ex.what());
