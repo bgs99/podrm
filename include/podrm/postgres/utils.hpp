@@ -74,7 +74,7 @@ struct ParameterTraits {
 
 template <>
 inline ParameterTraits::Parameter
-ParameterTraits::toParam(const uint64_t &value) {
+ParameterTraits::toParam(const int64_t &value) {
   return {
       .data = std::to_string(value),
       .isBinary = false,

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "podrm/detail/span.hpp"
+#include <podrm/detail/span.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -13,8 +13,30 @@
 
 struct sqlite3;
 struct sqlite3_stmt;
+struct sqlite3_value;
 
 namespace podrm::sqlite {
+
+class Entry {
+public:
+  /// @throws InvalidRowError if the column is outside of the range
+  [[nodiscard]] std::string_view text() const;
+
+  /// @throws InvalidRowError if the column is outside of the range
+  [[nodiscard]] std::int64_t bigint() const;
+
+  /// @throws InvalidRowError if the column is outside of the range
+  [[nodiscard]] bool boolean() const;
+
+private:
+  sqlite3_stmt *statement;
+
+  int column;
+
+  friend class Row;
+
+  explicit Entry(sqlite3_stmt *statement, int column);
+};
 
 class Row {
 public:
@@ -26,13 +48,7 @@ public:
   [[nodiscard]] int getColumnCount() const { return this->columnCount; }
 
   /// @throws InvalidRowError if the column is outside of the range
-  [[nodiscard]] std::string_view text(int column) const;
-
-  /// @throws InvalidRowError if the column is outside of the range
-  [[nodiscard]] std::int64_t bigint(int column) const;
-
-  /// @throws InvalidRowError if the column is outside of the range
-  [[nodiscard]] bool boolean(int column) const;
+  [[nodiscard]] Entry get(int column) const;
 
 private:
   sqlite3_stmt *statement;

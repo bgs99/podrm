@@ -61,31 +61,31 @@ void bindArg(const Statement &statement, const int pos, const Value value) {
 
 } // namespace
 
-std::string_view Row::text(const int column) const {
-  if (column < 0 || column > this->columnCount) {
-    throw InvalidRowError{
-        fmt::format("Column {} is out of range, result contains {} columns",
-                    column, this->columnCount)};
-  }
-
+std::string_view Entry::text() const {
   // Required and safe
   // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast):
   return reinterpret_cast<const char *>(
-      sqlite3_column_text(this->statement, column));
+      sqlite3_column_text(this->statement, this->column));
 }
 
-[[nodiscard]] std::int64_t Row::bigint(int column) const {
+std::int64_t Entry::bigint() const {
+
+  return sqlite3_column_int64(this->statement, this->column);
+}
+
+bool Entry::boolean() const { return this->bigint() != 0; }
+
+Entry::Entry(sqlite3_stmt *const statement, const int column)
+    : statement(statement), column(column) {}
+
+Entry Row::get(const int column) const {
   if (column < 0 || column > this->columnCount) {
     throw InvalidRowError{
         fmt::format("Column {} is out of range, result contains {} columns",
                     column, this->columnCount)};
   }
 
-  return sqlite3_column_int64(this->statement, column);
-}
-
-[[nodiscard]] bool Row::boolean(int column) const {
-  return this->bigint(column) != 0;
+  return Entry{this->statement, column};
 }
 
 Result::Result(Result::Statement statement) : statement(std::move(statement)) {

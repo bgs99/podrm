@@ -4,6 +4,8 @@
 #include <podrm/sqlite/detail/operations.hpp>
 #include <podrm/sqlite/utils.hpp>
 
+#include <optional>
+
 namespace podrm::sqlite {
 
 template <DatabaseEntity T> void createTable(Connection &connection) {
@@ -18,6 +20,18 @@ template <DatabaseEntity Entity>
 void persist(Connection &connection, Entity &entity) {
   return detail::persist(connection, DatabaseEntityDescription<Entity>,
                          &entity);
+}
+
+template <DatabaseEntity Entity>
+std::optional<Entity> find(Connection &connection,
+                           const PrimaryKeyType<Entity> &key) {
+  Entity result;
+  if (!detail::find(connection, DatabaseEntityDescription<Entity>, key,
+                    &result)) {
+    return std::nullopt;
+  }
+
+  return result;
 }
 
 } // namespace podrm::sqlite

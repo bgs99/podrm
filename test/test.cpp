@@ -2,12 +2,15 @@
 
 #include <podrm/api.hpp>
 #include <podrm/definitions.hpp>
+#include <podrm/detail/span.hpp>
 #include <podrm/sqlite/operations.hpp>
 #include <podrm/sqlite/utils.hpp>
 
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <optional>
 #include <string>
 
 #include <fmt/core.h>
@@ -17,7 +20,7 @@ namespace orm = podrm::sqlite;
 namespace {
 
 struct Person {
-  std::uint64_t id;
+  std::int64_t id;
 
   std::string name;
 };
@@ -33,22 +36,42 @@ constexpr auto podrm::EntityRegistration<Person> =
 
 static_assert(podrm::DatabaseEntity<Person>);
 
-int main() {
+int main(const int argc, const char **argv) {
+  podrm::detail::span<const char *const> args{
+      argv,
+      static_cast<std::size_t>(argc),
+  };
+
   try {
-    orm::Connection conn = orm::Connection::inMemory("test");
+    orm::Connection conn = args.size() <= 1 ? orm::Connection::inMemory("test")
+                                            : orm::Connection::inFile(args[1]);
 
     orm::createTable<Person>(conn);
 
     assert(!orm::exists<Person>(conn));
 
-    Person person{
-        .id = 42,
-        .name = "Alex",
-    };
+    {
+      std::optional<Person> person = orm::find<Person>(conn, 42);
+      assert(!person.has_value());
+    }
 
-    orm::persist(conn, person);
+    {
+      Person person{
+          .id = 42,
+          .name = "Alex",
+      };
+
+      orm::persist(conn, person);
+    }
 
     assert(orm::exists<Person>(conn));
+
+    {
+      std::optional<Person> person = orm::find<Person>(conn, 42);
+      assert(person.has_value());
+      assert(person->id == 42);
+      assert(person->name == "Alex");
+    }
 
     return 0;
   } catch (const std::exception &ex) {
