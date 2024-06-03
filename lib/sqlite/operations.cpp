@@ -221,4 +221,13 @@ bool find(Connection &connection, const EntityDescription &description,
   return true;
 }
 
+void erase(Connection &connection, const EntityDescription description,
+           const Value key) {
+  const std::string queryStr =
+      fmt::format("DELETE FROM '{}' WHERE {} = ?", description.name,
+                  description.fields[description.primaryKey].name);
+
+  connection.execute(queryStr, podrm::detail::span<const Value, 1>{&key, 1});
+}
+
 } // namespace podrm::sqlite::detail

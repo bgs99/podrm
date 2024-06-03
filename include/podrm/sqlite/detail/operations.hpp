@@ -16,4 +16,6 @@ void persist(Connection &connection, const EntityDescription &description,
 bool find(Connection &connection, const EntityDescription &description,
           Value key, void *result);
 
+void erase(Connection &connection, EntityDescription description, Value key);
+
 } // namespace podrm::sqlite::detail

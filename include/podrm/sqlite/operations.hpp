@@ -34,4 +34,9 @@ std::optional<Entity> find(Connection &connection,
   return result;
 }
 
+template <DatabaseEntity Entity>
+void erase(Connection &connection, const std::int64_t key) {
+  detail::erase(connection, DatabaseEntityDescription<Entity>, key);
+}
+
 } // namespace podrm::sqlite
