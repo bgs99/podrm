@@ -10,12 +10,12 @@
 namespace {
 
 struct Composite {
-  std::uint64_t a;
-  std::uint64_t b;
+  std::int64_t a;
+  std::int64_t b;
 };
 
 struct Entity {
-  std::uint64_t id;
+  std::int64_t id;
 
   Composite composite;
 };

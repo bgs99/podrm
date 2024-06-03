@@ -12,7 +12,7 @@
 namespace {
 
 struct Person {
-  std::uint64_t id;
+  std::int64_t id;
 
   std::string name;
 };

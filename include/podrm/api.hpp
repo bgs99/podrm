@@ -85,8 +85,8 @@ constexpr std::optional<ValueRegistrationData<T>> ValueRegistration =
     std::nullopt;
 
 template <>
-inline constexpr auto ValueRegistration<uint64_t> =
-    ValueRegistrationData<uint64_t>{
+inline constexpr auto ValueRegistration<int64_t> =
+    ValueRegistrationData<int64_t>{
         .nativeType = NativeType::BigInt,
     };
 

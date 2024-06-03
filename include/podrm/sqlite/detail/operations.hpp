@@ -12,4 +12,8 @@ bool exists(Connection &connection, const EntityDescription &entity);
 void persist(Connection &connection, const EntityDescription &description,
              void *entity);
 
+/// @param[out] result pointer to the result structure, filled if found
+bool find(Connection &connection, const EntityDescription &description,
+          Value key, void *result);
+
 } // namespace podrm::sqlite::detail

@@ -2,12 +2,14 @@
 
 #include <podrm/api.hpp>
 #include <podrm/definitions.hpp>
+#include <podrm/detail/span.hpp>
 #include <podrm/sqlite/detail/operations.hpp>
 #include <podrm/sqlite/utils.hpp>
 
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -119,6 +121,35 @@ std::vector<Value> intoArgs(const FieldDescription description, void *field) {
       description.field);
 }
 
+void init(const FieldDescription description, const Row row, int &currentColumn,
+          void *field) {
+  const auto initPrimitive = [field, row, &currentColumn](
+                                 const PrimitiveFieldDescription description) {
+    switch (description.nativeType) {
+    case NativeType::BigInt:
+      *static_cast<std::int64_t *>(field) = row.get(currentColumn).bigint();
+      ++currentColumn;
+      return;
+    case NativeType::String:
+      *static_cast<std::string *>(field) =
+          static_cast<std::string>(row.get(currentColumn).text());
+      ++currentColumn;
+      return;
+    }
+    assert(false);
+  };
+
+  const auto initComposite = [field, row, &currentColumn](
+                                 const CompositeFieldDescription description) {
+    for (const FieldDescription fieldDescr : description.fields) {
+      init(fieldDescr, row, currentColumn, fieldDescr.memberPtr(field));
+    }
+  };
+
+  std::visit(podrm::detail::MultiLambda{initPrimitive, initComposite},
+             description.field);
+}
+
 } // namespace
 
 void createTable(Connection &connection, const EntityDescription &entity) {
@@ -140,7 +171,7 @@ bool exists(Connection &connection, const EntityDescription &entity) {
   const Result result = connection.query(
       fmt::format("SELECT EXISTS(SELECT 1 FROM '{}')", entity.name));
   // NOLINTNEXTLINE(bugprone-unchecked-optional-access): fixed query
-  return result.getRow().value().boolean(0);
+  return result.getRow().value().get(0).boolean();
 }
 
 void persist(Connection &connection, const EntityDescription &description,
@@ -166,6 +197,28 @@ void persist(Connection &connection, const EntityDescription &description,
   fmt::format_to(appender, ")");
 
   connection.execute(fmt::to_string(buf), values);
+}
+
+bool find(Connection &connection, const EntityDescription &description,
+          const Value key, void *result) {
+  const std::string queryStr =
+      fmt::format("SELECT * FROM '{}' WHERE {} = ?", description.name,
+                  description.fields[description.primaryKey].name);
+
+  const Result query =
+      connection.query(queryStr, podrm::detail::span<const Value, 1>{&key, 1});
+  std::optional<Row> row = query.getRow();
+  if (!row.has_value()) {
+    return false;
+  }
+
+  int currentColumn = 0;
+  for (const FieldDescription description : description.fields) {
+    init(description, row.value(), currentColumn,
+         description.memberPtr(result));
+  }
+
+  return true;
 }
 
 } // namespace podrm::sqlite::detail
