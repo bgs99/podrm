@@ -30,11 +30,14 @@ struct CompositeFieldDescription {
 };
 
 using MemberPtrFn = void *(*)(void *);
+using ConstMemberPtrFn = const void *(*)(const void *);
 
 struct FieldDescription {
   std::string_view name;
 
   MemberPtrFn memberPtr;
+  ConstMemberPtrFn constMemberPtr;
+
   std::variant<PrimitiveFieldDescription, CompositeFieldDescription> field;
 };
 
@@ -72,10 +75,12 @@ constexpr std::array<FieldDescription, boost::pfr::tuple_size_v<T>>
 template <DatabasePrimitive Field>
 constexpr FieldDescription
 getFieldDescriptionOfField(const std::string_view name,
-                           const MemberPtrFn memberPtr) {
+                           const MemberPtrFn memberPtr,
+                           const ConstMemberPtrFn constMemberPtr) {
   return FieldDescription{
       .name{name},
       .memberPtr = memberPtr,
+      .constMemberPtr = constMemberPtr,
       .field =
           PrimitiveFieldDescription{
               .nativeType = ValueRegistration<Field>.nativeType,
@@ -87,10 +92,12 @@ template <DatabaseComposite Field>
   requires(not DatabasePrimitive<Field>)
 constexpr FieldDescription
 getFieldDescriptionOfField(const std::string_view name,
-                           const MemberPtrFn memberPtr) {
+                           const MemberPtrFn memberPtr,
+                           const ConstMemberPtrFn constMemberPtr) {
   return FieldDescription{
       .name{name},
       .memberPtr = memberPtr,
+      .constMemberPtr = constMemberPtr,
       .field =
           CompositeFieldDescription{
               .fields = FieldDescriptions<Field>,
@@ -103,8 +110,13 @@ constexpr std::array<FieldDescription, FieldsCount>
 getFieldDescriptions(std::array<std::string_view, FieldsCount> names,
                      std::index_sequence<Idx...> /*indices*/) {
   return {getFieldDescriptionOfField<boost::pfr::tuple_element_t<Idx, T>>(
-      names[Idx], [](void *data) -> void * {
+      names[Idx],
+      [](void *data) -> void * {
         T &instance = *static_cast<T *>(data);
+        return &boost::pfr::get<Idx>(instance);
+      },
+      [](const void *data) -> const void * {
+        const T &instance = *static_cast<const T *>(data);
         return &boost::pfr::get<Idx>(instance);
       })...};
 }
