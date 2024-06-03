@@ -58,21 +58,16 @@ void createTableFields(const FieldDescription &description,
         }
       };
 
-  const podrm::detail::MultiLambda createField{
-      createPrimitiveField,
-      createCompositeField,
-  };
-
-  static_assert(std::is_invocable_r_v<void, decltype(createField),
-                                      const PrimitiveFieldDescription &>);
-  static_assert(std::is_invocable_r_v<void, decltype(createField),
-                                      const CompositeFieldDescription &>);
-
-  std::visit(createField, description.field);
+  std::visit(
+      podrm::detail::MultiLambda{
+          createPrimitiveField,
+          createCompositeField,
+      },
+      description.field);
 }
 
-void createParamPlaceholders(const FieldDescription description,
-                             fmt::appender &appender, bool &first) {
+void createPersistParamPlaceholders(const FieldDescription description,
+                                    fmt::appender &appender, bool &first) {
   const auto createPrimitive = [&appender,
                                 &first](const PrimitiveFieldDescription) {
     fmt::format_to(appender, "{}?", first ? "" : ",");
@@ -82,7 +77,7 @@ void createParamPlaceholders(const FieldDescription description,
   const auto createComposite = [&appender,
                                 &first](const CompositeFieldDescription descr) {
     for (const FieldDescription field : descr.fields) {
-      createParamPlaceholders(field, appender, first);
+      createPersistParamPlaceholders(field, appender, first);
     }
   };
 
@@ -90,7 +85,36 @@ void createParamPlaceholders(const FieldDescription description,
              description.field);
 }
 
-std::vector<Value> intoArgs(const FieldDescription description, void *field) {
+void createUpdateParamPlaceholders(const FieldDescription &description,
+                                   fmt::appender &appender,
+                                   std::vector<std::string_view> prefixes,
+                                   bool &first) {
+  prefixes.push_back(description.name);
+
+  const auto createPrimitiveField = [&prefixes, &appender,
+                                     &first](const PrimitiveFieldDescription) {
+    fmt::format_to(appender, "{}'{}'=?", first ? "" : ",",
+                   fmt::to_string(fmt::join(prefixes, "_")));
+    first = false;
+  };
+
+  const auto createCompositeField =
+      [&prefixes, &appender, &first](const CompositeFieldDescription &descr) {
+        for (const FieldDescription &field : descr.fields) {
+          createUpdateParamPlaceholders(field, appender, prefixes, first);
+        }
+      };
+
+  std::visit(
+      podrm::detail::MultiLambda{
+          createPrimitiveField,
+          createCompositeField,
+      },
+      description.field);
+}
+
+std::vector<Value> intoArgs(const FieldDescription description,
+                            const void *field) {
   const auto createPrimitive =
       [field](
           const PrimitiveFieldDescription description) -> std::vector<Value> {
@@ -108,7 +132,7 @@ std::vector<Value> intoArgs(const FieldDescription description, void *field) {
     std::vector<Value> values;
     for (const FieldDescription fieldDescr : descr.fields) {
       for (const Value value :
-           intoArgs(fieldDescr, fieldDescr.memberPtr(field))) {
+           intoArgs(fieldDescr, fieldDescr.constMemberPtr(field))) {
         values.emplace_back(value);
       }
     }
@@ -187,10 +211,11 @@ void persist(Connection &connection, const EntityDescription &description,
     if (description.idMode == IdMode::Auto && i == description.primaryKey) {
       // TODO: support auto ids
     }
-    createParamPlaceholders(description.fields[i], appender, first);
+    createPersistParamPlaceholders(description.fields[i], appender, first);
 
-    for (const Value value : intoArgs(
-             description.fields[i], description.fields[i].memberPtr(entity))) {
+    for (const Value value :
+         intoArgs(description.fields[i],
+                  description.fields[i].constMemberPtr(entity))) {
       values.emplace_back(value);
     }
   }
@@ -228,6 +253,37 @@ void erase(Connection &connection, const EntityDescription description,
                   description.fields[description.primaryKey].name);
 
   connection.execute(queryStr, podrm::detail::span<const Value, 1>{&key, 1});
+}
+
+void update(Connection &connection, const EntityDescription description,
+            const void *entity) {
+  fmt::memory_buffer buf;
+  fmt::appender appender{buf};
+
+  fmt::format_to(appender, "UPDATE '{}' SET ", description.name);
+
+  bool first = true;
+  std::vector<Value> values;
+  for (const FieldDescription field : description.fields) {
+    createUpdateParamPlaceholders(field, appender, {}, first);
+    for (const Value value : intoArgs(field, field.constMemberPtr(entity))) {
+      values.emplace_back(value);
+    }
+  }
+
+  fmt::format_to(appender, " WHERE {} = ?",
+                 description.fields[description.primaryKey].name);
+
+  std::vector<Value> key = intoArgs(
+      description.fields[description.primaryKey],
+      description.fields[description.primaryKey].constMemberPtr(entity));
+  if (key.size() != 1) {
+    throw std::invalid_argument{
+        fmt::format("Entity has composite primary key")};
+  }
+  values.emplace_back(key[0]);
+
+  connection.execute(fmt::to_string(buf), values);
 }
 
 } // namespace podrm::sqlite::detail

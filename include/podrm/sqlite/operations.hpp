@@ -39,4 +39,9 @@ void erase(Connection &connection, const PrimaryKeyType<Entity> &key) {
   detail::erase(connection, DatabaseEntityDescription<Entity>, key);
 }
 
+template <DatabaseEntity Entity>
+void update(Connection &connection, const Entity &entity) {
+  detail::update(connection, DatabaseEntityDescription<Entity>, &entity);
+}
+
 } // namespace podrm::sqlite

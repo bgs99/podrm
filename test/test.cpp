@@ -73,6 +73,22 @@ int main(const int argc, const char **argv) {
       assert(person->name == "Alex");
     }
 
+    {
+      const Person person{
+          .id = 42,
+          .name = "Anne",
+      };
+
+      orm::update(conn, person);
+    }
+
+    {
+      std::optional<Person> person = orm::find<Person>(conn, 42);
+      assert(person.has_value());
+      assert(person->id == 42);
+      assert(person->name == "Anne");
+    }
+
     orm::erase<Person>(conn, 42);
 
     assert(!orm::exists<Person>(conn));
