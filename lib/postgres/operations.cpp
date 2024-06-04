@@ -20,15 +20,22 @@ namespace podrm::postgres::detail {
 
 namespace {
 
-std::string_view toString(const NativeType type) {
+std::string_view toString(const ImageType type) {
   switch (type) {
-  case NativeType::BigInt:
+  case ImageType::Int:
+  case ImageType::Uint:
     return "BIGINT";
-  case NativeType::String:
+  case ImageType::String:
     return "VARCHAR";
+  case ImageType::Float:
+    return "DOUBLE PRECISION";
+  case ImageType::Bool:
+    return "BOOLEAN";
+  case ImageType::Bytes:
+    return "BYTEA";
   }
   throw std::runtime_error{
-      "Unsupported native type " + std::to_string(static_cast<int>(type)),
+      "Unsupported image type " + std::to_string(static_cast<int>(type)),
   };
 }
 
@@ -44,7 +51,7 @@ void createTableFields(const FieldDescription &description,
         fmt::format_to(appender, "{}{} {}{}", first ? "" : ",",
                        connection.escapeIdentifier(
                            fmt::to_string(fmt::join(prefixes, "_"))),
-                       toString(descr.nativeType),
+                       toString(descr.imageType),
                        isPrimaryKey ? " PRIMARY KEY" : "");
         first = false;
       };

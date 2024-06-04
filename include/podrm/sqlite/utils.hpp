@@ -1,6 +1,7 @@
 #pragma once
 
-#include <podrm/detail/span.hpp>
+#include <podrm/api.hpp>
+#include <podrm/span.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -9,7 +10,6 @@
 #include <optional>
 #include <stdexcept>
 #include <string_view>
-#include <variant>
 
 struct sqlite3;
 struct sqlite3_stmt;
@@ -19,14 +19,15 @@ namespace podrm::sqlite {
 
 class Entry {
 public:
-  /// @throws InvalidRowError if the column is outside of the range
   [[nodiscard]] std::string_view text() const;
 
-  /// @throws InvalidRowError if the column is outside of the range
   [[nodiscard]] std::int64_t bigint() const;
 
-  /// @throws InvalidRowError if the column is outside of the range
+  [[nodiscard]] double real() const;
+
   [[nodiscard]] bool boolean() const;
+
+  [[nodiscard]] span<const std::byte> bytes() const;
 
 private:
   sqlite3_stmt *statement;
@@ -86,9 +87,6 @@ private:
   explicit Result(Statement statement);
 };
 
-using Value = std::variant<detail::span<std::byte>, double, std::int64_t,
-                           std::string_view>;
-
 class Connection {
 public:
   static Connection fromRaw(sqlite3 &connection);
@@ -97,9 +95,9 @@ public:
 
   static Connection inFile(const std::filesystem::path &path);
 
-  void execute(std::string_view statement, detail::span<const Value> args = {});
+  void execute(std::string_view statement, span<const AsImage> args = {});
 
-  Result query(std::string_view statement, detail::span<const Value> args = {});
+  Result query(std::string_view statement, span<const AsImage> args = {});
 
 private:
   std::unique_ptr<sqlite3, int (*)(sqlite3 *)> connection;

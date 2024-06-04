@@ -2,7 +2,7 @@
 
 #include <podrm/api.hpp>
 #include <podrm/definitions.hpp>
-#include <podrm/detail/span.hpp>
+#include <podrm/span.hpp>
 #include <podrm/sqlite/operations.hpp>
 #include <podrm/sqlite/utils.hpp>
 
@@ -37,7 +37,7 @@ constexpr auto podrm::EntityRegistration<Person> =
 static_assert(podrm::DatabaseEntity<Person>);
 
 int main(const int argc, const char **argv) {
-  podrm::detail::span<const char *const> args{
+  podrm::span<const char *const> args{
       argv,
       static_cast<std::size_t>(argc),
   };

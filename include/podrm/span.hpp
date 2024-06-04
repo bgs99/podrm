@@ -9,7 +9,7 @@
 #include <span>
 #endif
 
-namespace podrm::detail {
+namespace podrm {
 
 #ifdef PFR_ORM_USE_GSL_SPAN
 template <typename T, std::size_t Extent = gsl::dynamic_extent>
@@ -19,4 +19,4 @@ template <typename T, std::size_t Extent = std::dynamic_extent>
 using span = std::span<T, Extent>;
 #endif
 
-} // namespace podrm::detail
+} // namespace podrm

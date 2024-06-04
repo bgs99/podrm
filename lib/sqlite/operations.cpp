@@ -2,7 +2,7 @@
 
 #include <podrm/api.hpp>
 #include <podrm/definitions.hpp>
-#include <podrm/detail/span.hpp>
+#include <podrm/span.hpp>
 #include <podrm/sqlite/detail/operations.hpp>
 #include <podrm/sqlite/utils.hpp>
 
@@ -13,7 +13,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <type_traits>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -24,15 +24,22 @@ namespace podrm::sqlite::detail {
 
 namespace {
 
-std::string_view toString(const NativeType type) {
+std::string_view toString(const ImageType type) {
   switch (type) {
-  case NativeType::BigInt:
+  case ImageType::Int:
+  case ImageType::Uint:
     return "INTEGER";
-  case NativeType::String:
+  case ImageType::String:
     return "TEXT";
+  case ImageType::Float:
+    return "REAL";
+  case ImageType::Bool:
+    return "INTEGER";
+  case ImageType::Bytes:
+    return "BLOB";
   }
   throw std::runtime_error{
-      "Unsupported native type " + std::to_string(static_cast<int>(type)),
+      "Unsupported image type " + std::to_string(static_cast<int>(type)),
   };
 }
 
@@ -46,7 +53,7 @@ void createTableFields(const FieldDescription &description,
        &first](const PrimitiveFieldDescription &descr) {
         fmt::format_to(appender, "{}'{}' '{}'{}", first ? "" : ",",
                        fmt::to_string(fmt::join(prefixes, "_")),
-                       toString(descr.nativeType),
+                       toString(descr.imageType),
                        isPrimaryKey ? " PRIMARY KEY" : "");
         first = false;
       };
@@ -113,27 +120,21 @@ void createUpdateParamPlaceholders(const FieldDescription &description,
       description.field);
 }
 
-std::vector<Value> intoArgs(const FieldDescription description,
-                            const void *field) {
+std::vector<AsImage> intoArgs(const FieldDescription description,
+                              const void *field) {
   const auto createPrimitive =
       [field](
-          const PrimitiveFieldDescription description) -> std::vector<Value> {
-    switch (description.nativeType) {
-    case NativeType::BigInt:
-      return {*static_cast<const std::int64_t *>(field)};
-    case NativeType::String:
-      return {*static_cast<const std::string *>(field)};
-    }
-    assert(false);
+          const PrimitiveFieldDescription description) -> std::vector<AsImage> {
+    return {description.asImage(field)};
   };
 
   const auto createComposite =
-      [field](const CompositeFieldDescription descr) -> std::vector<Value> {
-    std::vector<Value> values;
+      [field](const CompositeFieldDescription descr) -> std::vector<AsImage> {
+    std::vector<AsImage> values;
     for (const FieldDescription fieldDescr : descr.fields) {
-      for (const Value value :
+      for (AsImage &value :
            intoArgs(fieldDescr, fieldDescr.constMemberPtr(field))) {
-        values.emplace_back(value);
+        values.emplace_back(std::move(value));
       }
     }
 
@@ -149,14 +150,30 @@ void init(const FieldDescription description, const Row row, int &currentColumn,
           void *field) {
   const auto initPrimitive = [field, row, &currentColumn](
                                  const PrimitiveFieldDescription description) {
-    switch (description.nativeType) {
-    case NativeType::BigInt:
-      *static_cast<std::int64_t *>(field) = row.get(currentColumn).bigint();
+    switch (description.imageType) {
+    case ImageType::Int:
+      description.fromImage(row.get(currentColumn).bigint(), field);
       ++currentColumn;
       return;
-    case NativeType::String:
-      *static_cast<std::string *>(field) =
-          static_cast<std::string>(row.get(currentColumn).text());
+    case ImageType::Uint:
+      description.fromImage(
+          static_cast<std::uint64_t>(row.get(currentColumn).bigint()), field);
+      ++currentColumn;
+      return;
+    case ImageType::String:
+      description.fromImage(row.get(currentColumn).text(), field);
+      ++currentColumn;
+      return;
+    case ImageType::Float:
+      description.fromImage(row.get(currentColumn).real(), field);
+      ++currentColumn;
+      return;
+    case ImageType::Bool:
+      description.fromImage(row.get(currentColumn).boolean(), field);
+      ++currentColumn;
+      return;
+    case ImageType::Bytes:
+      description.fromImage(row.get(currentColumn).bytes(), field);
       ++currentColumn;
       return;
     }
@@ -206,17 +223,17 @@ void persist(Connection &connection, const EntityDescription &description,
   fmt::format_to(appender, "INSERT INTO '{}' VALUES (", description.name);
 
   bool first = true;
-  std::vector<Value> values;
+  std::vector<AsImage> values;
   for (std::size_t i = 0; i < description.fields.size(); ++i) {
     if (description.idMode == IdMode::Auto && i == description.primaryKey) {
       // TODO: support auto ids
     }
     createPersistParamPlaceholders(description.fields[i], appender, first);
 
-    for (const Value value :
+    for (AsImage &value :
          intoArgs(description.fields[i],
                   description.fields[i].constMemberPtr(entity))) {
-      values.emplace_back(value);
+      values.emplace_back(std::move(value));
     }
   }
   fmt::format_to(appender, ")");
@@ -225,13 +242,13 @@ void persist(Connection &connection, const EntityDescription &description,
 }
 
 bool find(Connection &connection, const EntityDescription &description,
-          const Value key, void *result) {
+          const AsImage &key, void *result) {
   const std::string queryStr =
       fmt::format("SELECT * FROM '{}' WHERE {} = ?", description.name,
                   description.fields[description.primaryKey].name);
 
   const Result query =
-      connection.query(queryStr, podrm::detail::span<const Value, 1>{&key, 1});
+      connection.query(queryStr, podrm::span<const AsImage, 1>{&key, 1});
   std::optional<Row> row = query.getRow();
   if (!row.has_value()) {
     return false;
@@ -247,12 +264,12 @@ bool find(Connection &connection, const EntityDescription &description,
 }
 
 void erase(Connection &connection, const EntityDescription description,
-           const Value key) {
+           const AsImage &key) {
   const std::string queryStr =
       fmt::format("DELETE FROM '{}' WHERE {} = ?", description.name,
                   description.fields[description.primaryKey].name);
 
-  connection.execute(queryStr, podrm::detail::span<const Value, 1>{&key, 1});
+  connection.execute(queryStr, podrm::span<const AsImage, 1>{&key, 1});
 }
 
 void update(Connection &connection, const EntityDescription description,
@@ -263,25 +280,25 @@ void update(Connection &connection, const EntityDescription description,
   fmt::format_to(appender, "UPDATE '{}' SET ", description.name);
 
   bool first = true;
-  std::vector<Value> values;
+  std::vector<AsImage> values;
   for (const FieldDescription field : description.fields) {
     createUpdateParamPlaceholders(field, appender, {}, first);
-    for (const Value value : intoArgs(field, field.constMemberPtr(entity))) {
-      values.emplace_back(value);
+    for (AsImage &value : intoArgs(field, field.constMemberPtr(entity))) {
+      values.emplace_back(std::move(value));
     }
   }
 
   fmt::format_to(appender, " WHERE {} = ?",
                  description.fields[description.primaryKey].name);
 
-  std::vector<Value> key = intoArgs(
+  std::vector<AsImage> key = intoArgs(
       description.fields[description.primaryKey],
       description.fields[description.primaryKey].constMemberPtr(entity));
   if (key.size() != 1) {
     throw std::invalid_argument{
         fmt::format("Entity has composite primary key")};
   }
-  values.emplace_back(key[0]);
+  values.emplace_back(std::move(key[0]));
 
   connection.execute(fmt::to_string(buf), values);
 }
