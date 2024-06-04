@@ -83,37 +83,27 @@ using FromImage = std::variant<span<const std::byte>, double, std::string_view,
 template <typename T> struct ValueRegistration;
 
 template <> struct ValueRegistration<int64_t> {
-  constexpr static std::int64_t asImage(const std::int64_t value) {
-    return value;
-  }
-  constexpr static std::int64_t fromImage(const std::int64_t image) {
-    return image;
-  }
+  static std::int64_t asImage(const std::int64_t value) { return value; }
+  static std::int64_t fromImage(const std::int64_t image) { return image; }
 };
 
 template <> struct ValueRegistration<uint64_t> {
-  constexpr static std::uint64_t asImage(const std::uint64_t value) {
-    return value;
-  }
-  constexpr static std::uint64_t fromImage(const std::uint64_t image) {
-    return image;
-  }
+  static std::uint64_t asImage(const std::uint64_t value) { return value; }
+  static std::uint64_t fromImage(const std::uint64_t image) { return image; }
 };
 
 template <> struct ValueRegistration<std::string> {
-  constexpr static std::string_view asImage(const std::string &value) {
-    return value;
-  }
-  constexpr static std::string fromImage(const std::string_view image) {
+  static std::string_view asImage(const std::string &value) { return value; }
+  static std::string fromImage(const std::string_view image) {
     return std::string{image};
   }
 };
 
 template <> struct ValueRegistration<std::string_view> {
-  constexpr static std::string_view asImage(const std::string_view &value) {
+  static std::string_view asImage(const std::string_view &value) {
     return value;
   }
-  constexpr static std::string_view fromImage(const std::string_view image) {
+  static std::string_view fromImage(const std::string_view image) {
     return image;
   }
 };
