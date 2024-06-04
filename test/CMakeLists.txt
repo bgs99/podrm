@@ -12,7 +12,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set(PFR_TEST_USE_FIELD_OF ON)
 endif()
 
-add_executable(${PROJECT_NAME} test.cpp simple.cpp nested.cpp)
+add_executable(${PROJECT_NAME} test.cpp nested.cpp relation.cpp simple.cpp)
 target_link_libraries(${PROJECT_NAME} podrm fmt::fmt)
 if(PFR_TEST_USE_FIELD_OF)
   target_compile_definitions(${PROJECT_NAME} PRIVATE -DPFR_TEST_USE_FIELD_OF)
