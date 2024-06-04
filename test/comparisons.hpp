@@ -8,7 +8,7 @@ namespace podrm {
 
 constexpr bool operator==(const PrimitiveFieldDescription lhs,
                           const PrimitiveFieldDescription rhs) {
-  return lhs.nativeType == rhs.nativeType;
+  return lhs.imageType == rhs.imageType;
 }
 
 constexpr bool operator==(FieldDescription lhs, FieldDescription rhs);

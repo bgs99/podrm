@@ -1,5 +1,6 @@
 #pragma once
 
+#include <podrm/api.hpp>
 #include <podrm/definitions.hpp>
 #include <podrm/sqlite/utils.hpp>
 
@@ -14,9 +15,10 @@ void persist(Connection &connection, const EntityDescription &description,
 
 /// @param[out] result pointer to the result structure, filled if found
 bool find(Connection &connection, const EntityDescription &description,
-          Value key, void *result);
+          const AsImage &key, void *result);
 
-void erase(Connection &connection, EntityDescription description, Value key);
+void erase(Connection &connection, EntityDescription description,
+           const AsImage &key);
 
 void update(Connection &connection, EntityDescription description,
             const void *entity);

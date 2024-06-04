@@ -48,14 +48,14 @@ constexpr std::array ExpectedCompositeFields = {
         .name = "a",
         .field =
             podrm::PrimitiveFieldDescription{
-                .nativeType = podrm::NativeType::BigInt,
+                .imageType = podrm::ImageType::Int,
             },
     },
     podrm::FieldDescription{
         .name = "b",
         .field =
             podrm::PrimitiveFieldDescription{
-                .nativeType = podrm::NativeType::BigInt,
+                .imageType = podrm::ImageType::Int,
             },
     },
 };
@@ -69,7 +69,7 @@ constexpr std::array ExpectedEntityFields = {
         .name = "id",
         .field =
             podrm::PrimitiveFieldDescription{
-                .nativeType = podrm::NativeType::BigInt,
+                .imageType = podrm::ImageType::Int,
             },
     },
     podrm::FieldDescription{

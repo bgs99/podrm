@@ -41,14 +41,14 @@ constexpr std::array ExpectedFields = {
         .name = "id",
         .field =
             podrm::PrimitiveFieldDescription{
-                .nativeType = podrm::NativeType::BigInt,
+                .imageType = podrm::ImageType::Int,
             },
     },
     podrm::FieldDescription{
         .name = "name",
         .field =
             podrm::PrimitiveFieldDescription{
-                .nativeType = podrm::NativeType::String,
+                .imageType = podrm::ImageType::String,
             },
     },
 };
@@ -66,11 +66,11 @@ static_assert(PersonDescription.fields[0].name == "id");
 static_assert(std::get<podrm::PrimitiveFieldDescription>(
                   PersonDescription.fields[0].field) ==
               podrm::PrimitiveFieldDescription{
-                  .nativeType = podrm::NativeType::BigInt});
+                  .imageType = podrm::ImageType::Int});
 static_assert(PersonDescription.fields[1].name == "name");
 static_assert(std::get<podrm::PrimitiveFieldDescription>(
                   PersonDescription.fields[1].field) ==
               podrm::PrimitiveFieldDescription{
-                  .nativeType = podrm::NativeType::String});
+                  .imageType = podrm::ImageType::String});
 
 } // namespace

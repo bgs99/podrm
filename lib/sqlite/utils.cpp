@@ -1,15 +1,18 @@
 #include "../detail/multilambda.hpp"
 
-#include <podrm/detail/span.hpp>
+#include <podrm/api.hpp>
+#include <podrm/span.hpp>
 #include <podrm/sqlite/utils.hpp>
 
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <variant>
@@ -39,33 +42,48 @@ Statement createStatement(sqlite3 &connection,
   return Statement{stmt};
 }
 
-void bindArg(const Statement &statement, const int pos, const Value value) {
-  const auto bindBlob = [&statement, pos](const detail::span<std::byte> blob) {
+void bindArg(const Statement &statement, const int pos, const AsImage &value) {
+  const auto bindInt = [&statement, pos](const std::int64_t value) {
+    sqlite3_bind_int64(statement.get(), pos + 1, value);
+  };
+  const auto bindUInt = [&statement, pos](const std::uint64_t value) {
+    if (value > std::numeric_limits<std::int64_t>::max()) {
+      throw std::invalid_argument{"Unsigned integer too big"};
+    }
+    sqlite3_bind_int64(statement.get(), pos + 1,
+                       static_cast<std::int64_t>(value));
+  };
+  const auto bindBlob = [&statement, pos](const span<const std::byte> blob) {
     sqlite3_bind_blob64(statement.get(), pos, blob.data(), blob.size(),
                         SQLITE_STATIC);
   };
   const auto bindDouble = [&statement, pos](const double value) {
     sqlite3_bind_double(statement.get(), pos + 1, value);
   };
-  const auto bindInt = [&statement, pos](const std::int64_t value) {
-    sqlite3_bind_int64(statement.get(), pos + 1, value);
-  };
   const auto bindText = [&statement, pos](const std::string_view text) {
     sqlite3_bind_text64(statement.get(), pos + 1, text.data(), text.size(),
                         SQLITE_STATIC, SQLITE_UTF8);
   };
+  const auto bindBool = [&statement, pos](const bool value) {
+    sqlite3_bind_int(statement.get(), pos + 1, value ? 1 : 0);
+  };
 
-  std::visit(detail::MultiLambda{bindBlob, bindDouble, bindInt, bindText},
+  std::visit(detail::MultiLambda{bindBlob, bindDouble, bindText, bindInt,
+                                 bindUInt, bindBool},
              value);
 }
 
 } // namespace
 
 std::string_view Entry::text() const {
-  // Required and safe
-  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast):
-  return reinterpret_cast<const char *>(
-      sqlite3_column_text(this->statement, this->column));
+  return {
+      // Required and safe
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast):
+      reinterpret_cast<const char *>(
+          sqlite3_column_text(this->statement, this->column)),
+      static_cast<std::size_t>(
+          sqlite3_column_bytes(this->statement, this->column)),
+  };
 }
 
 std::int64_t Entry::bigint() const {
@@ -73,7 +91,20 @@ std::int64_t Entry::bigint() const {
   return sqlite3_column_int64(this->statement, this->column);
 }
 
+double Entry::real() const {
+  return sqlite3_column_double(this->statement, this->column);
+}
+
 bool Entry::boolean() const { return this->bigint() != 0; }
+
+span<const std::byte> Entry::bytes() const {
+  return {
+      static_cast<const std::byte *>(
+          sqlite3_column_blob(this->statement, this->column)),
+      static_cast<std::size_t>(
+          sqlite3_column_bytes(this->statement, this->column)),
+  };
+}
 
 Entry::Entry(sqlite3_stmt *const statement, const int column)
     : statement(statement), column(column) {}
@@ -144,7 +175,7 @@ Connection Connection::inFile(const std::filesystem::path &path) {
 }
 
 void Connection::execute(const std::string_view statement,
-                         const detail::span<const Value> args) {
+                         const span<const AsImage> args) {
   const Statement stmt = createStatement(*this->connection, statement);
 
   for (int i = 0; i < args.size(); ++i) {
@@ -158,7 +189,7 @@ void Connection::execute(const std::string_view statement,
 }
 
 Result Connection::query(const std::string_view statement,
-                         const detail::span<const Value> args) {
+                         const span<const AsImage> args) {
   Statement stmt = createStatement(*this->connection, statement);
 
   for (int i = 0; i < args.size(); ++i) {

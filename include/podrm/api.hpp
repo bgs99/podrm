@@ -2,12 +2,16 @@
 
 #include <podrm/detail/field.hpp>
 #include <podrm/detail/pfr.hpp>
+#include <podrm/span.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <type_traits>
+#include <variant>
+#include <vector>
 
 #include <boost/pfr.hpp>
 #include <boost/pfr/config.hpp>
@@ -69,32 +73,40 @@ template <typename T>
 constexpr std::optional<CompositeRegistrationData<T>> CompositeRegistration =
     std::nullopt;
 
-enum class NativeType : std::uint8_t {
-  BigInt,
-  String,
+using AsImage = std::variant<span<const std::byte>, double,
+                             std::vector<std::byte>, std::string_view,
+                             std::string, std::uint64_t, std::int64_t, bool>;
+
+using FromImage = std::variant<span<const std::byte>, double, std::string_view,
+                               std::uint64_t, std::int64_t, bool>;
+
+template <typename T> struct ValueRegistration;
+
+template <> struct ValueRegistration<int64_t> {
+  static std::int64_t asImage(const std::int64_t value) { return value; }
+  static std::int64_t fromImage(const std::int64_t image) { return image; }
 };
 
-template <typename T> struct ValueRegistrationData {
-  NativeType nativeType;
+template <> struct ValueRegistration<uint64_t> {
+  static std::uint64_t asImage(const std::uint64_t value) { return value; }
+  static std::uint64_t fromImage(const std::uint64_t image) { return image; }
 };
 
-/// Basic value type mapping
-/// @tparam T registered value type
-template <typename T>
-constexpr std::optional<ValueRegistrationData<T>> ValueRegistration =
-    std::nullopt;
+template <> struct ValueRegistration<std::string> {
+  static std::string_view asImage(const std::string &value) { return value; }
+  static std::string fromImage(const std::string_view image) {
+    return std::string{image};
+  }
+};
 
-template <>
-inline constexpr auto ValueRegistration<int64_t> =
-    ValueRegistrationData<int64_t>{
-        .nativeType = NativeType::BigInt,
-    };
-
-template <>
-inline constexpr auto ValueRegistration<std::string> =
-    ValueRegistrationData<std::string>{
-        .nativeType = NativeType::String,
-    };
+template <> struct ValueRegistration<std::string_view> {
+  static std::string_view asImage(const std::string_view &value) {
+    return value;
+  }
+  static std::string_view fromImage(const std::string_view image) {
+    return image;
+  }
+};
 
 /// Tag to be used with boost::pfr::is_reflectable*
 struct ReflectionTag;
