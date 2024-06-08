@@ -179,7 +179,7 @@ Connection Connection::inFile(const std::filesystem::path &path) {
 
 std::uint64_t Connection::execute(const std::string_view statement,
                                   const span<const AsImage> args) {
-  std::unique_lock lock{this->mutex};
+  const std::unique_lock lock{this->mutex};
 
   const Statement stmt = createStatement(*this->connection, statement);
 
@@ -197,7 +197,7 @@ std::uint64_t Connection::execute(const std::string_view statement,
 
 Result Connection::query(const std::string_view statement,
                          const span<const AsImage> args) {
-  std::unique_lock lock{this->mutex};
+  const std::unique_lock lock{this->mutex};
 
   Statement stmt = createStatement(*this->connection, statement);
 
