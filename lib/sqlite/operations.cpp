@@ -26,6 +26,7 @@ namespace {
 
 std::string_view toString(const ImageType type) {
   switch (type) {
+  case ImageType::Bool:
   case ImageType::Int:
   case ImageType::Uint:
     return "INTEGER";
@@ -33,8 +34,6 @@ std::string_view toString(const ImageType type) {
     return "TEXT";
   case ImageType::Float:
     return "REAL";
-  case ImageType::Bool:
-    return "INTEGER";
   case ImageType::Bytes:
     return "BLOB";
   }
@@ -43,9 +42,9 @@ std::string_view toString(const ImageType type) {
   };
 }
 
-void createTableFields(const FieldDescription &description,
-                       const bool isPrimaryKey, fmt::appender &appender,
-                       std::vector<std::string_view> prefixes, bool &first) {
+void createFields(const FieldDescription &description, const bool isPrimaryKey,
+                  fmt::appender &appender,
+                  std::vector<std::string_view> prefixes, bool &first) {
   prefixes.push_back(description.name);
 
   const auto createPrimitiveField =
@@ -61,7 +60,7 @@ void createTableFields(const FieldDescription &description,
   const auto createCompositeField =
       [&prefixes, &appender, &first](const CompositeFieldDescription &descr) {
         for (const FieldDescription &field : descr.fields) {
-          createTableFields(field, false, appender, prefixes, first);
+          createFields(field, false, appender, prefixes, first);
         }
       };
 
@@ -69,6 +68,38 @@ void createTableFields(const FieldDescription &description,
       podrm::detail::MultiLambda{
           createPrimitiveField,
           createCompositeField,
+      },
+      description.field);
+}
+
+void createConstraints(const FieldDescription &description,
+                       fmt::appender &appender,
+                       std::vector<std::string_view> prefixes) {
+  prefixes.push_back(description.name);
+
+  const auto createPrimitiveFieldConstraints =
+      [&prefixes, &appender](const PrimitiveFieldDescription &descr) {
+        if (!descr.foreignKeyContraint.has_value()) {
+          return;
+        }
+
+        fmt::format_to(appender, ", FOREIGN KEY('{}') REFERENCES '{}'('{}')",
+                       fmt::to_string(fmt::join(prefixes, "_")),
+                       descr.foreignKeyContraint->entity,
+                       descr.foreignKeyContraint->field);
+      };
+
+  const auto createCompositeFieldConstraints =
+      [&prefixes, &appender](const CompositeFieldDescription &descr) {
+        for (const FieldDescription &field : descr.fields) {
+          createConstraints(field, appender, prefixes);
+        }
+      };
+
+  std::visit(
+      podrm::detail::MultiLambda{
+          createPrimitiveFieldConstraints,
+          createCompositeFieldConstraints,
       },
       description.field);
 }
@@ -199,11 +230,16 @@ void createTable(Connection &connection, const EntityDescription &entity) {
   fmt::memory_buffer buf;
   fmt::appender appender{buf};
   fmt::format_to(appender, "CREATE TABLE '{}' (", entity.name);
+
   bool first = true;
   for (std::size_t i = 0; i < entity.fields.size(); ++i) {
-    createTableFields(entity.fields[i], entity.primaryKey == i, appender, {},
-                      first);
+    createFields(entity.fields[i], entity.primaryKey == i, appender, {}, first);
   }
+
+  for (const FieldDescription &field : entity.fields) {
+    createConstraints(field, appender, {});
+  }
+
   fmt::format_to(appender, ")");
   connection.execute(fmt::to_string(buf));
 }
