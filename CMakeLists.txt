@@ -12,8 +12,10 @@ find_package(SQLite3 REQUIRED)
 
 add_library(podrm STATIC)
 target_compile_features(podrm PUBLIC cxx_std_20)
-target_sources(podrm PRIVATE lib/sqlite/utils.cpp lib/sqlite/operations.cpp
-                             lib/postgres/utils.cpp lib/postgres/operations.cpp)
+target_sources(
+  podrm
+  PRIVATE lib/sqlite/connection.cpp lib/sqlite/entry.cpp lib/sqlite/result.cpp
+          lib/sqlite/row.cpp lib/postgres/utils.cpp lib/postgres/operations.cpp)
 target_include_directories(podrm SYSTEM PUBLIC include)
 target_link_libraries(
   podrm
