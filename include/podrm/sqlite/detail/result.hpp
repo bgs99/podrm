@@ -18,6 +18,8 @@ public:
 
   bool nextRow();
 
+  [[nodiscard]] bool valid() const;
+
   [[nodiscard]] int getColumnCount() const { return this->columnCount; }
 
 private:

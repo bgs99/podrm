@@ -3,6 +3,7 @@
 #include <podrm/api.hpp>
 #include <podrm/reflection.hpp>
 #include <podrm/span.hpp>
+#include <podrm/sqlite/detail/cursor.hpp>
 #include <podrm/sqlite/detail/result.hpp>
 
 #include <cstdint>
@@ -40,6 +41,8 @@ public:
   void erase(EntityDescription description, const AsImage &key);
 
   void update(EntityDescription description, const void *entity);
+
+  Cursor iterate(EntityDescription description);
 
 private:
   std::unique_ptr<sqlite3, int (*)(sqlite3 *)> connection;

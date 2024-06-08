@@ -4,6 +4,7 @@
 #include <podrm/reflection.hpp>
 #include <podrm/span.hpp>
 #include <podrm/sqlite/detail/connection.hpp>
+#include <podrm/sqlite/detail/cursor.hpp>
 #include <podrm/sqlite/detail/result.hpp>
 #include <podrm/sqlite/detail/row.hpp>
 
@@ -232,51 +233,6 @@ std::vector<AsImage> intoArgs(const FieldDescription description,
       description.field);
 }
 
-void init(const FieldDescription description, const Row row, int &currentColumn,
-          void *field) {
-  const auto initPrimitive = [field, row, &currentColumn](
-                                 const PrimitiveFieldDescription description) {
-    switch (description.imageType) {
-    case ImageType::Int:
-      description.fromImage(row.get(currentColumn).bigint(), field);
-      ++currentColumn;
-      return;
-    case ImageType::Uint:
-      description.fromImage(
-          static_cast<std::uint64_t>(row.get(currentColumn).bigint()), field);
-      ++currentColumn;
-      return;
-    case ImageType::String:
-      description.fromImage(row.get(currentColumn).text(), field);
-      ++currentColumn;
-      return;
-    case ImageType::Float:
-      description.fromImage(row.get(currentColumn).real(), field);
-      ++currentColumn;
-      return;
-    case ImageType::Bool:
-      description.fromImage(row.get(currentColumn).boolean(), field);
-      ++currentColumn;
-      return;
-    case ImageType::Bytes:
-      description.fromImage(row.get(currentColumn).bytes(), field);
-      ++currentColumn;
-      return;
-    }
-    assert(false);
-  };
-
-  const auto initComposite = [field, row, &currentColumn](
-                                 const CompositeFieldDescription description) {
-    for (const FieldDescription fieldDescr : description.fields) {
-      init(fieldDescr, row, currentColumn, fieldDescr.memberPtr(field));
-    }
-  };
-
-  std::visit(podrm::detail::MultiLambda{initPrimitive, initComposite},
-             description.field);
-}
-
 } // namespace
 
 Connection::Connection(sqlite3 &connection)
@@ -401,20 +357,12 @@ bool Connection::find(const EntityDescription &description, const AsImage &key,
       fmt::format("SELECT * FROM '{}' WHERE {} = ?", description.name,
                   description.fields[description.primaryKey].name);
 
-  const Result query =
-      this->query(queryStr, podrm::span<const AsImage, 1>{&key, 1});
-  std::optional<Row> row = query.getRow();
-  if (!row.has_value()) {
-    return false;
-  }
+  const Cursor cursor = Cursor{
+      this->query(queryStr, podrm::span<const AsImage, 1>{&key, 1}),
+      description.fields,
+  };
 
-  int currentColumn = 0;
-  for (const FieldDescription description : description.fields) {
-    init(description, row.value(), currentColumn,
-         description.memberPtr(result));
-  }
-
-  return true;
+  return cursor.extract(result);
 }
 
 void Connection::erase(const EntityDescription description,
@@ -462,6 +410,16 @@ void Connection::update(const EntityDescription description,
   if (changes == 0) {
     throw std::runtime_error("Entity with the given key is not found");
   }
+}
+
+Cursor Connection::iterate(const EntityDescription description) {
+  const std::string queryStr =
+      fmt::format("SELECT * FROM '{}'", description.name);
+
+  return Cursor{
+      this->query(queryStr),
+      description.fields,
+  };
 }
 
 } // namespace podrm::sqlite::detail

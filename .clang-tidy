@@ -8,11 +8,12 @@ Checks:
   - concurrency-*
   - cert-*
   - bugprone-*
-  - -misc-include-cleaner  # not reliable
+  - -misc-include-cleaner # not reliable
   - -llvm-header-guard # #pragma once
   - -llvm-include-order # managed by clang-format
   - -modernize-use-trailing-return-type # TODO
   - -misc-no-recursion # simplifies code
+  - -cert-dcl21-cpp # conflicts with not specifying return as const
 
 CheckOptions:
   - { key: readability-identifier-naming.ClassCase, value: CamelCase }

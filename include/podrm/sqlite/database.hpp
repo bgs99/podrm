@@ -3,6 +3,7 @@
 #include <podrm/api.hpp>
 #include <podrm/primary_key.hpp>
 #include <podrm/reflection.hpp>
+#include <podrm/sqlite/cursor.hpp>
 #include <podrm/sqlite/detail/connection.hpp>
 
 #include <filesystem>
@@ -59,6 +60,12 @@ public:
 
   template <DatabaseEntity Entity> void update(const Entity &entity) {
     this->connection.update(DatabaseEntityDescription<Entity>, &entity);
+  }
+
+  template <DatabaseEntity Entity> Cursor<Entity> iterate() {
+    return Cursor<Entity>{
+        this->connection.iterate(DatabaseEntityDescription<Entity>),
+    };
   }
 
 private:
