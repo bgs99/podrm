@@ -3,12 +3,17 @@
 #include <podrm/api.hpp>
 #include <podrm/reflection.hpp>
 #include <podrm/span.hpp>
-#include <podrm/sqlite/detail/operations.hpp>
-#include <podrm/sqlite/utils.hpp>
+#include <podrm/sqlite/detail/connection.hpp>
+#include <podrm/sqlite/detail/result.hpp>
+#include <podrm/sqlite/detail/row.hpp>
 
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
+#include <limits>
+#include <memory>
+#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -19,10 +24,60 @@
 
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <sqlite3.h>
 
 namespace podrm::sqlite::detail {
 
 namespace {
+
+using Statement =
+    std::unique_ptr<sqlite3_stmt, decltype([](sqlite3_stmt *statement) {
+                      sqlite3_finalize(statement);
+                    })>;
+
+Statement createStatement(sqlite3 &connection,
+                          const std::string_view statement) {
+  sqlite3_stmt *stmt = nullptr;
+  const int result =
+      sqlite3_prepare_v3(&connection, statement.data(),
+                         static_cast<int>(statement.size()), 0, &stmt, nullptr);
+  if (result != SQLITE_OK) {
+    throw std::runtime_error{sqlite3_errmsg(&connection)};
+  }
+
+  return Statement{stmt};
+}
+
+void bindArg(const Statement &statement, const int pos, const AsImage &value) {
+  const auto bindInt = [&statement, pos](const std::int64_t value) {
+    sqlite3_bind_int64(statement.get(), pos + 1, value);
+  };
+  const auto bindUInt = [&statement, pos](const std::uint64_t value) {
+    if (value > std::numeric_limits<std::int64_t>::max()) {
+      throw std::invalid_argument{"Unsigned integer too big"};
+    }
+    sqlite3_bind_int64(statement.get(), pos + 1,
+                       static_cast<std::int64_t>(value));
+  };
+  const auto bindBlob = [&statement, pos](const span<const std::byte> blob) {
+    sqlite3_bind_blob64(statement.get(), pos, blob.data(), blob.size(),
+                        SQLITE_STATIC);
+  };
+  const auto bindDouble = [&statement, pos](const double value) {
+    sqlite3_bind_double(statement.get(), pos + 1, value);
+  };
+  const auto bindText = [&statement, pos](const std::string_view text) {
+    sqlite3_bind_text64(statement.get(), pos + 1, text.data(), text.size(),
+                        SQLITE_STATIC, SQLITE_UTF8);
+  };
+  const auto bindBool = [&statement, pos](const bool value) {
+    sqlite3_bind_int(statement.get(), pos + 1, value ? 1 : 0);
+  };
+
+  std::visit(podrm::detail::MultiLambda{bindBlob, bindDouble, bindText, bindInt,
+                                        bindUInt, bindBool},
+             value);
+}
 
 std::string_view toString(const ImageType type) {
   switch (type) {
@@ -224,8 +279,72 @@ void init(const FieldDescription description, const Row row, int &currentColumn,
 
 } // namespace
 
-void createTable(Connection &connection, const EntityDescription &entity) {
-  connection.execute(fmt::format("DROP TABLE IF EXISTS '{}'", entity.name));
+Connection::Connection(sqlite3 &connection)
+    : connection(&connection, &sqlite3_close_v2) {
+  this->execute("PRAGMA foreign_keys = ON");
+}
+
+Connection Connection::fromRaw(sqlite3 &connection) {
+  return Connection{connection};
+}
+
+Connection Connection::inMemory(const char *const name) {
+  sqlite3 *connection = nullptr;
+  const int result = sqlite3_open_v2(
+      name, &connection,
+      SQLITE_OPEN_MEMORY | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
+  if (result != SQLITE_OK) {
+    throw std::runtime_error{sqlite3_errstr(result)};
+  }
+
+  return Connection{*connection};
+}
+
+Connection Connection::inFile(const std::filesystem::path &path) {
+  sqlite3 *connection = nullptr;
+  const int result =
+      sqlite3_open_v2(path.string().c_str(), &connection,
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
+  if (result != SQLITE_OK) {
+    throw std::runtime_error{sqlite3_errstr(result)};
+  }
+
+  return Connection{*connection};
+}
+
+std::uint64_t Connection::execute(const std::string_view statement,
+                                  const span<const AsImage> args) {
+  const std::unique_lock lock{*this->mutex};
+
+  const Statement stmt = createStatement(*this->connection, statement);
+
+  for (int i = 0; i < args.size(); ++i) {
+    bindArg(stmt, i, args[i]);
+  }
+
+  const int executeResult = sqlite3_step(stmt.get());
+  if (executeResult != SQLITE_DONE) {
+    throw std::runtime_error{sqlite3_errmsg(this->connection.get())};
+  }
+
+  return sqlite3_changes64(this->connection.get());
+}
+
+Result Connection::query(const std::string_view statement,
+                         const span<const AsImage> args) {
+  const std::unique_lock lock{*this->mutex};
+
+  Statement stmt = createStatement(*this->connection, statement);
+
+  for (int i = 0; i < args.size(); ++i) {
+    bindArg(stmt, i, args[i]);
+  }
+
+  return Result{{stmt.release(), &sqlite3_finalize}};
+}
+
+void Connection::createTable(const EntityDescription &entity) {
+  this->execute(fmt::format("DROP TABLE IF EXISTS '{}'", entity.name));
 
   fmt::memory_buffer buf;
   fmt::appender appender{buf};
@@ -241,18 +360,17 @@ void createTable(Connection &connection, const EntityDescription &entity) {
   }
 
   fmt::format_to(appender, ")");
-  connection.execute(fmt::to_string(buf));
+  this->execute(fmt::to_string(buf));
 }
 
-bool exists(Connection &connection, const EntityDescription &entity) {
-  const Result result = connection.query(
+bool Connection::exists(const EntityDescription &entity) {
+  const Result result = this->query(
       fmt::format("SELECT EXISTS(SELECT 1 FROM '{}')", entity.name));
   // NOLINTNEXTLINE(bugprone-unchecked-optional-access): fixed query
   return result.getRow().value().get(0).boolean();
 }
 
-void persist(Connection &connection, const EntityDescription &description,
-             void *entity) {
+void Connection::persist(const EntityDescription &description, void *entity) {
   fmt::memory_buffer buf;
   fmt::appender appender{buf};
 
@@ -274,17 +392,17 @@ void persist(Connection &connection, const EntityDescription &description,
   }
   fmt::format_to(appender, ")");
 
-  connection.execute(fmt::to_string(buf), values);
+  this->execute(fmt::to_string(buf), values);
 }
 
-bool find(Connection &connection, const EntityDescription &description,
-          const AsImage &key, void *result) {
+bool Connection::find(const EntityDescription &description, const AsImage &key,
+                      void *result) {
   const std::string queryStr =
       fmt::format("SELECT * FROM '{}' WHERE {} = ?", description.name,
                   description.fields[description.primaryKey].name);
 
   const Result query =
-      connection.query(queryStr, podrm::span<const AsImage, 1>{&key, 1});
+      this->query(queryStr, podrm::span<const AsImage, 1>{&key, 1});
   std::optional<Row> row = query.getRow();
   if (!row.has_value()) {
     return false;
@@ -299,21 +417,21 @@ bool find(Connection &connection, const EntityDescription &description,
   return true;
 }
 
-void erase(Connection &connection, const EntityDescription description,
-           const AsImage &key) {
+void Connection::erase(const EntityDescription description,
+                       const AsImage &key) {
   const std::string queryStr =
       fmt::format("DELETE FROM '{}' WHERE {} = ?", description.name,
                   description.fields[description.primaryKey].name);
 
   const std::uint64_t changes =
-      connection.execute(queryStr, podrm::span<const AsImage, 1>{&key, 1});
+      this->execute(queryStr, podrm::span<const AsImage, 1>{&key, 1});
   if (changes == 0) {
     throw std::runtime_error("Entity with the given key is not found");
   }
 }
 
-void update(Connection &connection, const EntityDescription description,
-            const void *entity) {
+void Connection::update(const EntityDescription description,
+                        const void *entity) {
   fmt::memory_buffer buf;
   fmt::appender appender{buf};
 
@@ -340,7 +458,7 @@ void update(Connection &connection, const EntityDescription description,
   }
   values.emplace_back(std::move(key[0]));
 
-  const std::uint64_t changes = connection.execute(fmt::to_string(buf), values);
+  const std::uint64_t changes = this->execute(fmt::to_string(buf), values);
   if (changes == 0) {
     throw std::runtime_error("Entity with the given key is not found");
   }

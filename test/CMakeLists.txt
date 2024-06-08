@@ -20,7 +20,8 @@ find_package(Catch2 3 REQUIRED)
 
 add_executable(${PROJECT_NAME} test.cpp nested.cpp relation.cpp
                                self_relation.cpp simple.cpp)
-target_link_libraries(${PROJECT_NAME} podrm fmt::fmt Catch2::Catch2WithMain)
+target_link_libraries(${PROJECT_NAME} podrm-sqlite fmt::fmt
+                      Catch2::Catch2WithMain)
 
 include(CTest)
 include(Catch)
