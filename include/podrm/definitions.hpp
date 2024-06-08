@@ -225,6 +225,6 @@ constexpr EntityDescription DatabaseEntityDescription{
 
 template <DatabaseEntity T>
 using PrimaryKeyType =
-    boost::pfr::tuple_element_t<DatabaseEntityDescription<T>.primaryKey, T>;
+    boost::pfr::tuple_element_t<EntityRegistration<T>.id.get(), T>;
 
 } // namespace podrm
