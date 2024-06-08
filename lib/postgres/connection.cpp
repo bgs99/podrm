@@ -2,7 +2,9 @@
 #include "formatters.hpp" // IWYU pragma: keep
 
 #include <podrm/api.hpp>
-#include <podrm/postgres/utils.hpp>
+#include <podrm/postgres/detail/connection.hpp>
+#include <podrm/postgres/detail/result.hpp>
+#include <podrm/postgres/detail/str.hpp>
 #include <podrm/reflection.hpp>
 
 #include <cstddef>
@@ -15,6 +17,7 @@
 
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <libpq-fe.h>
 
 namespace podrm::postgres::detail {
 
@@ -80,26 +83,62 @@ void createTableFields(const FieldDescription &description,
 
 } // namespace
 
-void createTable(Connection &connection, const EntityDescription &entity) {
-  const Str escapedTableName = connection.escapeIdentifier(entity.name);
-  connection.execute(fmt::format("DROP TABLE IF EXISTS {}", escapedTableName));
+Connection::Connection(const std::string &connectionStr)
+    : connection(PQconnectdb(connectionStr.c_str())) {
+  if (PQstatus(this->connection) != CONNECTION_OK) {
+    throw std::runtime_error{fmt::format("Failed to connect to db: {}",
+                                         PQerrorMessage(this->connection))};
+  }
+}
+
+Connection::~Connection() { PQfinish(this->connection); }
+
+Str Connection::escapeIdentifier(const std::string_view identifier) const {
+  return Str{PQescapeIdentifier(this->connection, identifier.data(),
+                                identifier.size())};
+}
+
+Result Connection::execute(const std::string &statement) {
+  Result result{PQexec(this->connection, statement.c_str())};
+  if (result.status() != PGRES_COMMAND_OK) {
+    throw std::runtime_error{
+        fmt::format("Error when executing a statement: {}",
+                    PQerrorMessage(this->connection)),
+    };
+  }
+  return result;
+}
+
+Result Connection::query(const std::string &statement) {
+  Result result{PQexec(this->connection, statement.c_str())};
+  if (result.status() != PGRES_TUPLES_OK) {
+    throw std::runtime_error{
+        fmt::format("Error when executing a query: {}",
+                    PQerrorMessage(this->connection)),
+    };
+  }
+  return result;
+}
+
+void Connection::createTable(const EntityDescription &entity) {
+  const Str escapedTableName = this->escapeIdentifier(entity.name);
+  this->execute(fmt::format("DROP TABLE IF EXISTS {}", escapedTableName));
 
   fmt::memory_buffer buf;
   fmt::appender appender{buf};
   fmt::format_to(appender, "CREATE TABLE {} (", escapedTableName);
   bool first = true;
   for (std::size_t i = 0; i < entity.fields.size(); ++i) {
-    createTableFields(entity.fields[i], entity.primaryKey == i, connection,
-                      appender, {}, first);
+    createTableFields(entity.fields[i], entity.primaryKey == i, *this, appender,
+                      {}, first);
   }
   fmt::format_to(appender, ")");
-  connection.execute(fmt::to_string(buf));
+  this->execute(fmt::to_string(buf));
 }
 
-bool exists(Connection &connection, const EntityDescription &entity) {
-  const Result result =
-      connection.query(fmt::format("SELECT EXISTS(SELECT 1 FROM {})",
-                                   connection.escapeIdentifier(entity.name)));
+bool Connection::exists(const EntityDescription &entity) {
+  const Result result = this->query(fmt::format(
+      "SELECT EXISTS(SELECT 1 FROM {})", this->escapeIdentifier(entity.name)));
   return result.value(0, 0)[0] == 't';
 }
 
