@@ -1,6 +1,7 @@
 #include <podrm/sqlite/detail/result.hpp>
 
 #include <cassert>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 
@@ -31,5 +32,7 @@ bool Result::nextRow() {
 
   return true;
 }
+
+bool Result::valid() const { return this->statement.has_value(); }
 
 } // namespace podrm::sqlite::detail

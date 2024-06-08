@@ -6,8 +6,10 @@
 #include <podrm/span.hpp>
 #include <podrm/sqlite/database.hpp>
 
+#include <array>
 #include <cassert>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <string>
 
@@ -136,5 +138,28 @@ TEST_CASE("SQLite works", "[sqlite]") {
     const std::optional<Person> personFound = db.find<Person>(person.id);
     REQUIRE(personFound.has_value());
     CHECK(personFound->name == "Anne");
+  }
+
+  SECTION("iterate iterates over existing entities") {
+    Person newPerson{
+        .id = 1,
+        .name = "John",
+        .address{.key = address.id},
+    };
+
+    REQUIRE_NOTHROW(db.persist(newPerson));
+
+    int i = 0;
+    std::array<std::reference_wrapper<const Person>, 2> expected = {
+        person,
+        newPerson,
+    };
+
+    for (const Person &result : db.iterate<Person>()) {
+      CHECK(result == expected.at(i).get());
+      ++i;
+    }
+
+    CHECK(i == 2);
   }
 }
