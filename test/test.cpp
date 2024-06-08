@@ -8,13 +8,11 @@
 #include <podrm/sqlite/utils.hpp>
 
 #include <cassert>
-#include <cstddef>
 #include <cstdint>
-#include <exception>
 #include <optional>
 #include <string>
 
-#include <fmt/core.h>
+#include <catch2/catch_test_macros.hpp>
 
 namespace orm = podrm::sqlite;
 
@@ -24,6 +22,9 @@ struct Address {
   std::int64_t id;
 
   std::string postalCode;
+
+  friend constexpr bool operator==(const Address &,
+                                   const Address &) noexcept = default;
 };
 
 } // namespace
@@ -43,6 +44,9 @@ struct Person {
   std::string name;
 
   podrm::ForeignKey<Address> address;
+
+  friend constexpr bool operator==(const Person &,
+                                   const Person &) noexcept = default;
 };
 
 } // namespace
@@ -56,86 +60,85 @@ constexpr auto podrm::EntityRegistration<Person> =
 
 static_assert(podrm::DatabaseEntity<Person>);
 
-int main(const int argc, const char **argv) {
-  podrm::span<const char *const> args{
-      argv,
-      static_cast<std::size_t>(argc),
+TEST_CASE("SQLite works", "[sqlite]") {
+  orm::Connection conn = orm::Connection::inMemory("test");
+
+  REQUIRE_NOTHROW(orm::createTable<Address>(conn));
+  REQUIRE_NOTHROW(orm::createTable<Person>(conn));
+
+  REQUIRE_FALSE(orm::exists<Address>(conn));
+  REQUIRE_FALSE(orm::exists<Person>(conn));
+
+  SECTION("Foreign key constraints are enforced") {
+    Person person{
+        .id = 0,
+        .name = "Alex",
+        .address{.key = 42},
+    };
+
+    CHECK_THROWS(orm::persist(conn, person));
+  }
+
+  Address address{
+      .id = 0,
+      .postalCode = "abc",
   };
 
-  try {
-    orm::Connection conn = args.size() <= 1 ? orm::Connection::inMemory("test")
-                                            : orm::Connection::inFile(args[1]);
+  REQUIRE_NOTHROW(orm::persist(conn, address));
 
-    orm::createTable<Address>(conn);
-    orm::createTable<Person>(conn);
+  Person person{
+      .id = 0,
+      .name = "Alex",
+      .address{.key = address.id},
+  };
 
-    assert(!orm::exists<Person>(conn));
+  REQUIRE_NOTHROW(orm::persist(conn, person));
 
-    {
-      std::optional<Person> person = orm::find<Person>(conn, 42);
-      assert(!person.has_value());
-    }
+  SECTION("find on non-existent id returns nullopt") {
+    const std::optional<Person> person = orm::find<Person>(conn, 42);
+    CHECK_FALSE(person.has_value());
+  }
 
-    {
-      Address address{
-          .id = 3,
-          .postalCode = "abc",
-      };
+  SECTION("erase on non-existent id throws") {
+    CHECK_THROWS(orm::erase<Person>(conn, 42));
+  }
 
-      orm::persist(conn, address);
+  SECTION("update on non-existent id throws") {
+    Person newPerson{
+        .id = 42,
+        .name = "Anne",
+        .address{.key = address.id},
+    };
 
-      Person person{
-          .id = 42,
-          .name = "Alex",
-          .address{.key = address.id},
-      };
+    CHECK_THROWS(orm::update<Person>(conn, newPerson));
+  }
 
-      orm::persist(conn, person);
-    }
+  SECTION("erase of referenced entity throws") {
+    REQUIRE_THROWS(orm::erase<Address>(conn, address.id));
+  }
 
-    assert(orm::exists<Person>(conn));
+  SECTION("find on existing id returns existing value") {
+    const std::optional<Person> personFound =
+        orm::find<Person>(conn, person.id);
+    REQUIRE(personFound.has_value());
+    CHECK(person == *personFound);
+  }
 
-    {
-      const std::optional<Person> person = orm::find<Person>(conn, 42);
-      assert(person.has_value());
-      assert(person->id == 42);
-      assert(person->name == "Alex");
-      assert(person->address.key == 3);
+  SECTION("erase on existing id erases existing value") {
+    REQUIRE_NOTHROW(orm::erase<Person>(conn, person.id));
 
-      const std::optional<Address> address =
-          orm::find<Address>(conn, person->address.key);
-      assert(address.has_value());
-      assert(address->id == 3);
-      assert(address->postalCode == "abc");
-    }
+    const std::optional<Person> personFound =
+        orm::find<Person>(conn, person.id);
+    CHECK_FALSE(personFound.has_value());
+  }
 
-    {
-      const Person person{
-          .id = 42,
-          .name = "Anne",
-          .address{.key = 3},
-      };
+  SECTION("update on existing id updates existing value") {
+    person.name = "Anne";
+    REQUIRE_NOTHROW(orm::update(conn, person));
 
-      orm::update(conn, person);
-    }
-
-    {
-      std::optional<Person> person = orm::find<Person>(conn, 42);
-      assert(person.has_value());
-      assert(person->id == 42);
-      assert(person->name == "Anne");
-    }
-
-    orm::erase<Person>(conn, 42);
-
-    assert(!orm::exists<Person>(conn));
-
-    return 0;
-  } catch (const std::exception &ex) {
-    fmt::print("{}\n", ex.what());
-    return 1;
-  } catch (...) {
-    fmt::print("Unknown exception\n");
-    return 1;
+    const std::optional<Person> personFound =
+        orm::find<Person>(conn, person.id);
+    REQUIRE(personFound.has_value());
+    CHECK(personFound->name == "Anne");
   }
 }

@@ -5,11 +5,17 @@
 #include <podrm/detail/fn_deduction.hpp>
 #include <podrm/primary_key.hpp>
 
+#include <utility>
+
 namespace podrm {
 
 template <typename Entity, typename KeyType = PrimaryKeyType<Entity>>
 struct ForeignKey {
   KeyType key;
+
+  friend constexpr bool
+  operator==(const ForeignKey &, const ForeignKey &) noexcept(
+      noexcept(std::declval<KeyType>() == std::declval<KeyType>())) = default;
 };
 
 template <typename Entity, typename KeyType>
