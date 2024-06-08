@@ -305,7 +305,11 @@ void erase(Connection &connection, const EntityDescription description,
       fmt::format("DELETE FROM '{}' WHERE {} = ?", description.name,
                   description.fields[description.primaryKey].name);
 
-  connection.execute(queryStr, podrm::span<const AsImage, 1>{&key, 1});
+  const std::uint64_t changes =
+      connection.execute(queryStr, podrm::span<const AsImage, 1>{&key, 1});
+  if (changes == 0) {
+    throw std::runtime_error("Entity with the given key is not found");
+  }
 }
 
 void update(Connection &connection, const EntityDescription description,
@@ -336,7 +340,10 @@ void update(Connection &connection, const EntityDescription description,
   }
   values.emplace_back(std::move(key[0]));
 
-  connection.execute(fmt::to_string(buf), values);
+  const std::uint64_t changes = connection.execute(fmt::to_string(buf), values);
+  if (changes == 0) {
+    throw std::runtime_error("Entity with the given key is not found");
+  }
 }
 
 } // namespace podrm::sqlite::detail

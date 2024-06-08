@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -176,8 +177,10 @@ Connection Connection::inFile(const std::filesystem::path &path) {
   return Connection{*connection};
 }
 
-void Connection::execute(const std::string_view statement,
-                         const span<const AsImage> args) {
+std::uint64_t Connection::execute(const std::string_view statement,
+                                  const span<const AsImage> args) {
+  const std::unique_lock lock{this->mutex};
+
   const Statement stmt = createStatement(*this->connection, statement);
 
   for (int i = 0; i < args.size(); ++i) {
@@ -188,10 +191,14 @@ void Connection::execute(const std::string_view statement,
   if (executeResult != SQLITE_DONE) {
     throw std::runtime_error{sqlite3_errmsg(this->connection.get())};
   }
+
+  return sqlite3_changes64(this->connection.get());
 }
 
 Result Connection::query(const std::string_view statement,
                          const span<const AsImage> args) {
+  const std::unique_lock lock{this->mutex};
+
   Statement stmt = createStatement(*this->connection, statement);
 
   for (int i = 0; i < args.size(); ++i) {
