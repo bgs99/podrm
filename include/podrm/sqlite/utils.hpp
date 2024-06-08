@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <stdexcept>
 #include <string_view>
@@ -95,12 +96,16 @@ public:
 
   static Connection inFile(const std::filesystem::path &path);
 
-  void execute(std::string_view statement, span<const AsImage> args = {});
+  /// @returns number of affected entries
+  std::uint64_t execute(std::string_view statement,
+                        span<const AsImage> args = {});
 
   Result query(std::string_view statement, span<const AsImage> args = {});
 
 private:
   std::unique_ptr<sqlite3, int (*)(sqlite3 *)> connection;
+
+  std::mutex mutex;
 
   explicit Connection(sqlite3 &connection);
 };
