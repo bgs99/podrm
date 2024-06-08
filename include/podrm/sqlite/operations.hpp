@@ -1,6 +1,6 @@
 #pragma once
 
-#include <podrm/definitions.hpp>
+#include <podrm/reflection.hpp>
 #include <podrm/sqlite/detail/operations.hpp>
 #include <podrm/sqlite/utils.hpp>
 

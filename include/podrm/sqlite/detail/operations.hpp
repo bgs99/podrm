@@ -1,7 +1,7 @@
 #pragma once
 
 #include <podrm/api.hpp>
-#include <podrm/definitions.hpp>
+#include <podrm/reflection.hpp>
 #include <podrm/sqlite/utils.hpp>
 
 namespace podrm::sqlite::detail {

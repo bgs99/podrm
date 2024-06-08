@@ -1,9 +1,9 @@
 #pragma once
 
 #include <podrm/api.hpp>
-#include <podrm/definitions.hpp>
 #include <podrm/detail/concepts.hpp>
 #include <podrm/detail/fn_deduction.hpp>
+#include <podrm/primary_key.hpp>
 
 namespace podrm {
 

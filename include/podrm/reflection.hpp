@@ -4,11 +4,14 @@
 #include <podrm/detail/concepts.hpp>
 #include <podrm/detail/pfr.hpp>
 #include <podrm/detail/type_name.hpp>
+#include <podrm/primary_key.hpp>
+#include <podrm/relations.hpp>
 #include <podrm/span.hpp>
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -83,10 +86,16 @@ template <ImageType Type> constexpr auto castImage(const FromImage image) {
 using AsImageUntyped = AsImage (*)(const void *value);
 using FromImageUntyped = void (*)(const FromImage image, void *value);
 
+struct ForeignKeyDescription {
+  std::string_view entity;
+  std::string_view field;
+};
+
 struct PrimitiveFieldDescription {
   ImageType imageType;
   AsImageUntyped asImage;
   FromImageUntyped fromImage;
+  std::optional<ForeignKeyDescription> foreignKeyContraint;
 };
 
 struct FieldDescription;
@@ -114,24 +123,6 @@ struct EntityDescription {
   std::size_t primaryKey;
 };
 
-template <typename T>
-concept DatabaseEntity =
-    detail::Reflectable<T> && std::is_same_v<decltype(EntityRegistration<T>),
-                                             const EntityRegistrationData<T>>;
-
-template <typename T>
-concept DatabaseComposite = detail::Reflectable<T> &&
-                            std::is_same_v<decltype(CompositeRegistration<T>),
-                                           const CompositeRegistrationData<T>>;
-
-template <typename T>
-concept DatabasePrimitive = requires(const T &value) {
-  { ValueRegistration<T>::asImage(value) } -> detail::convertible_to<AsImage>;
-  {
-    ValueRegistration<T>::fromImage(ValueRegistration<T>::asImage(value))
-  } -> detail::same_as<T>;
-};
-
 namespace detail {
 
 template <detail::Reflectable T>
@@ -146,6 +137,17 @@ template <DatabasePrimitive Field>
 constexpr ImageType PrimitiveImageType = getImageType<std::invoke_result_t<
     decltype(ValueRegistration<Field>::asImage), const Field &>>();
 
+template <typename Field>
+constexpr std::optional<ForeignKeyDescription> ForeignKeyConstraint =
+    std::nullopt;
+
+template <typename Entity, typename KeyType>
+constexpr std::optional<ForeignKeyDescription>
+    ForeignKeyConstraint<ForeignKey<Entity, KeyType>> = ForeignKeyDescription{
+        .entity = SimpleTypeName<Entity>,
+        .field = PrimaryKeyName<Entity>,
+    };
+
 template <DatabasePrimitive Field>
 constexpr PrimitiveFieldDescription PrimitiveDescription{
     .imageType = PrimitiveImageType<Field>,
@@ -157,7 +159,9 @@ constexpr PrimitiveFieldDescription PrimitiveDescription{
         [](const FromImage image, void *field) {
           *static_cast<Field *>(field) = ValueRegistration<Field>::fromImage(
               castImage<PrimitiveImageType<Field>>(image));
-        }};
+        },
+    .foreignKeyContraint = ForeignKeyConstraint<Field>,
+};
 
 template <DatabasePrimitive Field>
 constexpr FieldDescription
@@ -222,9 +226,5 @@ constexpr EntityDescription DatabaseEntityDescription{
     .fields = detail::FieldDescriptions<T>,
     .primaryKey = EntityRegistration<T>.id.get(),
 };
-
-template <DatabaseEntity T>
-using PrimaryKeyType =
-    boost::pfr::tuple_element_t<EntityRegistration<T>.id.get(), T>;
 
 } // namespace podrm
