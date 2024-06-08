@@ -144,7 +144,9 @@ bool Result::nextRow() {
 }
 
 Connection::Connection(sqlite3 &connection)
-    : connection(&connection, &sqlite3_close_v2) {}
+    : connection(&connection, &sqlite3_close_v2) {
+  this->execute("PRAGMA foreign_keys = ON");
+}
 
 Connection Connection::fromRaw(sqlite3 &connection) {
   return Connection{connection};

@@ -2,8 +2,8 @@
 #include "formatters.hpp" // IWYU pragma: keep
 
 #include <podrm/api.hpp>
-#include <podrm/definitions.hpp>
 #include <podrm/postgres/utils.hpp>
+#include <podrm/reflection.hpp>
 
 #include <cstddef>
 #include <stdexcept>

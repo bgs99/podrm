@@ -1,5 +1,6 @@
 #pragma once
 
+#include <podrm/detail/concepts.hpp>
 #include <podrm/detail/field.hpp>
 #include <podrm/detail/pfr.hpp>
 #include <podrm/span.hpp>
@@ -106,6 +107,24 @@ template <> struct ValueRegistration<std::string_view> {
   static std::string_view fromImage(const std::string_view image) {
     return image;
   }
+};
+
+template <typename T>
+concept DatabaseEntity =
+    detail::Reflectable<T> && std::is_same_v<decltype(EntityRegistration<T>),
+                                             const EntityRegistrationData<T>>;
+
+template <typename T>
+concept DatabaseComposite = detail::Reflectable<T> &&
+                            std::is_same_v<decltype(CompositeRegistration<T>),
+                                           const CompositeRegistrationData<T>>;
+
+template <typename T>
+concept DatabasePrimitive = requires(const T &value) {
+  { ValueRegistration<T>::asImage(value) } -> detail::convertible_to<AsImage>;
+  {
+    ValueRegistration<T>::fromImage(ValueRegistration<T>::asImage(value))
+  } -> detail::same_as<T>;
 };
 
 /// Tag to be used with boost::pfr::is_reflectable*

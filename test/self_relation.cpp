@@ -3,6 +3,7 @@
 
 #include <podrm/api.hpp>
 #include <podrm/reflection.hpp>
+#include <podrm/relations.hpp>
 
 #include <array>
 #include <cstdint>
@@ -14,9 +15,9 @@ struct Person {
   std::int64_t id;
 
   std::string name;
-};
 
-struct NotPerson {};
+  podrm::ForeignKey<Person, std::int64_t> parent;
+};
 
 } // namespace
 
@@ -30,7 +31,6 @@ constexpr auto podrm::EntityRegistration<Person> =
 namespace {
 
 static_assert(podrm::DatabaseEntity<Person>);
-static_assert(not podrm::DatabaseEntity<NotPerson>);
 
 constexpr podrm::EntityDescription PersonDescription =
     podrm::DatabaseEntityDescription<Person>;
@@ -48,6 +48,13 @@ constexpr std::array ExpectedFields = {
         .field =
             podrm::PrimitiveFieldDescription{
                 .imageType = podrm::ImageType::String,
+            },
+    },
+    podrm::FieldDescription{
+        .name = "parent",
+        .field =
+            podrm::PrimitiveFieldDescription{
+                .imageType = podrm::ImageType::Int,
             },
     },
 };
