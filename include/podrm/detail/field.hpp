@@ -28,19 +28,26 @@ constexpr std::size_t getFieldIndex() {
   return static_cast<std::size_t>(it - fieldNames.cbegin());
 }
 
-template <auto MemberPtr> struct MemberPtrClassImpl {};
+template <auto MemberPtr> struct MemberPtrTraits {};
 
-template <typename T, auto T::*MemberPtr> struct MemberPtrClassImpl<MemberPtr> {
-  using Type = T;
+template <typename TypeT, typename FieldT, FieldT TypeT::*MemberPtr>
+struct MemberPtrTraits<MemberPtr> {
+  using Type = TypeT;
+  using Field = FieldT;
 };
 
-template <typename T, const auto T::*MemberPtr>
-struct MemberPtrClassImpl<MemberPtr> {
-  using Type = T;
+template <typename TypeT, typename FieldT, const FieldT TypeT::*MemberPtr>
+struct MemberPtrTraits<MemberPtr> {
+  using Type = TypeT;
+  using Field = FieldT;
 };
 
 template <auto MemberPtr>
   requires(std::is_member_pointer_v<decltype(MemberPtr)>)
-using MemberPtrClass = typename MemberPtrClassImpl<MemberPtr>::Type;
+using MemberPtrClass = typename MemberPtrTraits<MemberPtr>::Type;
+
+template <auto MemberPtr>
+  requires(std::is_member_pointer_v<decltype(MemberPtr)>)
+using MemberPtrField = typename MemberPtrTraits<MemberPtr>::Field;
 
 } // namespace podrm::detail

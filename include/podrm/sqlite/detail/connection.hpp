@@ -6,6 +6,7 @@
 #include <podrm/sqlite/detail/cursor.hpp>
 #include <podrm/sqlite/detail/result.hpp>
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -42,7 +43,8 @@ public:
 
   void update(EntityDescription description, const void *entity);
 
-  Cursor iterate(EntityDescription description);
+  Cursor iterate(EntityDescription description, span<const std::size_t> fields,
+                 span<const AsImage> filters);
 
 private:
   std::unique_ptr<sqlite3, int (*)(sqlite3 *)> connection;

@@ -5,6 +5,7 @@
 #include <podrm/reflection.hpp>
 #include <podrm/sqlite/cursor.hpp>
 #include <podrm/sqlite/detail/connection.hpp>
+#include <podrm/sqlite/query.hpp>
 
 #include <filesystem>
 #include <optional>
@@ -64,7 +65,16 @@ public:
 
   template <DatabaseEntity Entity> Cursor<Entity> iterate() {
     return Cursor<Entity>{
-        this->connection.iterate(DatabaseEntityDescription<Entity>),
+        this->connection.iterate(DatabaseEntityDescription<Entity>, {}, {}),
+    };
+  }
+
+  template <DatabaseEntity Entity>
+  Cursor<Entity> execute(const SelectQuery<Entity> &query) {
+    return Cursor<Entity>{
+        this->connection.iterate(DatabaseEntityDescription<Entity>,
+                                 query.getFilterFields(),
+                                 query.getFilterValues()),
     };
   }
 
