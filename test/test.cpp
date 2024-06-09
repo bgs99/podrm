@@ -5,6 +5,7 @@
 #include <podrm/relations.hpp>
 #include <podrm/span.hpp>
 #include <podrm/sqlite/database.hpp>
+#include <podrm/sqlite/query.hpp>
 
 #include <array>
 #include <cassert>
@@ -96,8 +97,17 @@ TEST_CASE("SQLite works", "[sqlite]") {
   REQUIRE_NOTHROW(db.persist(person));
 
   SECTION("find on non-existent id returns nullopt") {
-    const std::optional<Person> person = db.find<Person>(42);
-    CHECK_FALSE(person.has_value());
+    const std::optional<Person> personFound = db.find<Person>(42);
+    CHECK_FALSE(personFound.has_value());
+  }
+
+  SECTION("select query using non-existent name returns existing value") {
+    bool found = false;
+    for (const Person &result : db.execute(
+             orm::select<Person>().where<&Person::name>("incorrect name"))) {
+      found = true;
+    }
+    CHECK_FALSE(found);
   }
 
   SECTION("erase on non-existent id throws") {
@@ -122,6 +132,16 @@ TEST_CASE("SQLite works", "[sqlite]") {
     const std::optional<Person> personFound = db.find<Person>(person.id);
     REQUIRE(personFound.has_value());
     CHECK(person == *personFound);
+  }
+
+  SECTION("select query using name returns existing value") {
+    bool found = false;
+    for (const Person &result :
+         db.execute(orm::select<Person>().where<&Person::name>(person.name))) {
+      CHECK(result == person);
+      found = true;
+    }
+    CHECK(found);
   }
 
   SECTION("erase on existing id erases existing value") {

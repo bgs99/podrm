@@ -187,7 +187,7 @@ void createUpdateParamPlaceholders(const FieldDescription &description,
 
   const auto createPrimitiveField = [&prefixes, &appender,
                                      &first](const PrimitiveFieldDescription) {
-    fmt::format_to(appender, "{}'{}'=?", first ? "" : ",",
+    fmt::format_to(appender, "{}{} = ?", first ? "" : ", ",
                    fmt::to_string(fmt::join(prefixes, "_")));
     first = false;
   };
@@ -353,16 +353,8 @@ void Connection::persist(const EntityDescription &description, void *entity) {
 
 bool Connection::find(const EntityDescription &description, const AsImage &key,
                       void *result) {
-  const std::string queryStr =
-      fmt::format("SELECT * FROM '{}' WHERE {} = ?", description.name,
-                  description.fields[description.primaryKey].name);
-
-  const Cursor cursor = Cursor{
-      this->query(queryStr, podrm::span<const AsImage, 1>{&key, 1}),
-      description.fields,
-  };
-
-  return cursor.extract(result);
+  return this->iterate(description, {&description.primaryKey, 1}, {&key, 1})
+      .extract(result);
 }
 
 void Connection::erase(const EntityDescription description,
@@ -412,12 +404,27 @@ void Connection::update(const EntityDescription description,
   }
 }
 
-Cursor Connection::iterate(const EntityDescription description) {
-  const std::string queryStr =
-      fmt::format("SELECT * FROM '{}'", description.name);
+Cursor Connection::iterate(const EntityDescription description,
+                           const span<const std::size_t> fields,
+                           const span<const AsImage> filters) {
+
+  fmt::memory_buffer buf;
+  fmt::appender appender{buf};
+
+  fmt::format_to(appender, "SELECT * FROM '{}'", description.name);
+
+  if (!fields.empty()) {
+    fmt::format_to(appender, " WHERE ");
+
+    bool first = true;
+    for (const std::size_t field : fields) {
+      createUpdateParamPlaceholders(description.fields.at(field), appender, {},
+                                    first);
+    }
+  }
 
   return Cursor{
-      this->query(queryStr),
+      this->query(fmt::to_string(buf), filters),
       description.fields,
   };
 }
