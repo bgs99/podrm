@@ -7,7 +7,7 @@ IncludeCategories:
   - Regex: "^<podrm/"
     CaseSensitive: true
     Priority: 1
-  - Regex: "^<(fmt/|catch2/|boost/|libpq-fe\\.h|sqlite3\\.h>)"
+  - Regex: "^<(fmt/|catch2/|boost/|libpq-fe\\.h|sqlite3\\.h|sql\\.h|sqltypes\\.h|sqlext\\.h|sqlucode\\.h>)"
     CaseSensitive: true
     Priority: 3
   - Regex: "^<"
