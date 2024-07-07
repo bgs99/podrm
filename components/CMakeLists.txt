@@ -1,0 +1,5 @@
+add_subdirectory(span)
+add_subdirectory(reflection)
+add_subdirectory(metadata)
+add_subdirectory(sqlite)
+add_subdirectory(postgres)
