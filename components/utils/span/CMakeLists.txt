@@ -7,3 +7,5 @@ if(PODRM_USE_GSL_SPAN)
   target_link_libraries(podrm-span INTERFACE Microsoft.GSL::GSL)
 endif()
 target_include_directories(podrm-span INTERFACE SYSTEM include)
+
+add_library(podrm::span ALIAS podrm-span)
