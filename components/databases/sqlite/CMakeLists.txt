@@ -7,7 +7,7 @@ target_sources(podrm-sqlite PRIVATE lib/connection.cpp lib/cursor.cpp
 target_link_libraries(
   podrm-sqlite
   PUBLIC podrm-metadata
-  PRIVATE SQLite::SQLite3 fmt::fmt)
+  PRIVATE podrm-multilambda SQLite::SQLite3 fmt::fmt)
 target_include_directories(podrm-sqlite PUBLIC include)
 
 if(BUILD_TESTING)

@@ -1,7 +1,7 @@
-#include "detail/multilambda.hpp"
 #include "formatters.hpp" // IWYU pragma: keep
 
 #include <podrm/metadata.hpp>
+#include <podrm/multilambda.hpp>
 #include <podrm/postgres/detail/connection.hpp>
 #include <podrm/postgres/detail/result.hpp>
 #include <podrm/postgres/detail/str.hpp>
