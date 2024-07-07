@@ -83,7 +83,7 @@ jobs:
         if: matrix.os == 'ubuntu-24.04'
 
       - name: Configure CMake
-        run: cmake -B ${{ env.build_dir }} -S ${{ github.workspace }} -DPFR_ORM_ASAN:BOOL=ON -DPFR_ORM_USE_GSL_SPAN:BOOL=ON -DCMAKE_FIND_FRAMEWORK=NEVER
+        run: cmake -B ${{ env.build_dir }} -S ${{ github.workspace }} -DPFR_ORM_ASAN:BOOL=ON -DPODRM_USE_GSL_SPAN:BOOL=ON -DCMAKE_FIND_FRAMEWORK=NEVER
 
       - name: Build tests
         run: cmake --build ${{ env.build_dir }}
