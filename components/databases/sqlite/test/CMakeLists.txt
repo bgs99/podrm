@@ -19,7 +19,7 @@ endif()
 find_package(Catch2 3 REQUIRED)
 
 add_executable(${PROJECT_NAME} test.cpp)
-target_link_libraries(${PROJECT_NAME} podrm-sqlite podrm-reflection fmt::fmt
+target_link_libraries(${PROJECT_NAME} podrm::sqlite podrm::reflection fmt::fmt
                       Catch2::Catch2WithMain)
 
 include(CTest)
