@@ -78,7 +78,7 @@ jobs:
 
       - name: Install dependencies (macOS)
         run: |
-          brew install fmt postgresql cpp-gsl catch2 unixodbc sqliteodbc
+          brew install fmt libpq cpp-gsl catch2 unixodbc sqliteodbc
           sudo echo -e '[SQLite3]\n\
           Description=SQLite ODBC Driver\n\
           Driver=/usr/lib64/libsqlite3odbc.so\n\
