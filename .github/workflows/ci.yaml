@@ -87,6 +87,7 @@ jobs:
           UsageCount=1' > /opt/homebrew/etc/odbcinst.ini
           sudo ln -s /opt/homebrew/etc/odbcinst.ini /etc/odbcinst.ini
           sudo ln -s /opt/homebrew/etc/odbc.ini /etc/odbc.ini
+          odbcinst -d -q
         if: matrix.os == 'macos-14'
 
       - name: Install dependencies (Ubuntu)
