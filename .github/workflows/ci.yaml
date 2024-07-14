@@ -84,9 +84,13 @@ jobs:
           Driver=/usr/lib64/libsqlite3odbc.so\n\
           Setup=/usr/lib64/libsqlite3odbc.so\n\
           Threading=2\n\
-          UsageCount=1' > /opt/homebrew/etc/odbcinst.ini
+          UsageCount=1' | tee /opt/homebrew/etc/odbcinst.ini
           sudo ln -s /opt/homebrew/etc/odbcinst.ini /etc/odbcinst.ini
           sudo ln -s /opt/homebrew/etc/odbc.ini /etc/odbc.ini
+          sudo mkdir /opt/homebrew/etc/ODBCDataSources
+          sudo mkdir /etc/ODBCDataSources
+          touch $HOME/.odbc.ini
+          odbcinst -j
           odbcinst -d -q
         if: matrix.os == 'macos-14'
 
