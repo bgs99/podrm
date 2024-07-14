@@ -79,17 +79,9 @@ jobs:
       - name: Install dependencies (macOS)
         run: |
           brew install fmt libpq cpp-gsl catch2 unixodbc sqliteodbc
-          sudo echo -e '[SQLite3]\n\
-          Description=SQLite ODBC Driver\n\
-          Driver=/usr/lib64/libsqlite3odbc.so\n\
-          Setup=/usr/lib64/libsqlite3odbc.so\n\
-          Threading=2\n\
-          UsageCount=1' | tee /opt/homebrew/etc/odbcinst.ini
+          sudo cp data/macos-odbcinst.ini /opt/homebrew/etc/odbcinst.ini
           sudo ln -s /opt/homebrew/etc/odbcinst.ini /etc/odbcinst.ini
           sudo ln -s /opt/homebrew/etc/odbc.ini /etc/odbc.ini
-          sudo mkdir /opt/homebrew/etc/ODBCDataSources
-          sudo mkdir /etc/ODBCDataSources
-          touch $HOME/.odbc.ini
           odbcinst -j
           odbcinst -d -q
         if: matrix.os == 'macos-14'
