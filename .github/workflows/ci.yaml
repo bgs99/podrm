@@ -78,12 +78,10 @@ jobs:
 
       - name: Install dependencies (macOS)
         run: |
-          brew install fmt libpq cpp-gsl catch2 unixodbc sqliteodbc
+          brew install fmt postgresql@14 cpp-gsl catch2 unixodbc sqliteodbc
           sudo cp data/macos-odbcinst.ini /opt/homebrew/etc/odbcinst.ini
           sudo ln -s /opt/homebrew/etc/odbcinst.ini /etc/odbcinst.ini
           sudo ln -s /opt/homebrew/etc/odbc.ini /etc/odbc.ini
-          odbcinst -j
-          odbcinst -d -q
         if: matrix.os == 'macos-14'
 
       - name: Install dependencies (Ubuntu)
