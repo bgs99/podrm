@@ -131,7 +131,7 @@ void createFields(const FieldDescription &description, const bool isPrimaryKey,
   const auto createPrimitiveField =
       [isPrimaryKey, &prefixes, &appender,
        &first](const PrimitiveFieldDescription &descr) {
-        fmt::format_to(appender, "{}'{}' '{}'{}", first ? "" : ",",
+        fmt::format_to(appender, "{}\"{}\" {}{}", first ? "" : ",",
                        fmt::to_string(fmt::join(prefixes, "_")),
                        toString(descr.imageType),
                        isPrimaryKey ? " PRIMARY KEY" : "");
@@ -164,7 +164,7 @@ void createConstraints(const FieldDescription &description,
           return;
         }
 
-        fmt::format_to(appender, ", FOREIGN KEY('{}') REFERENCES '{}'('{}')",
+        fmt::format_to(appender, R"(, FOREIGN KEY("{}") REFERENCES "{}"("{}"))",
                        fmt::to_string(fmt::join(prefixes, "_")),
                        descr.foreignKeyContraint->entity,
                        descr.foreignKeyContraint->field);
@@ -212,7 +212,7 @@ void createUpdateParamPlaceholders(const FieldDescription &description,
 
   const auto createPrimitiveField = [&prefixes, &appender,
                                      &first](const PrimitiveFieldDescription) {
-    fmt::format_to(appender, "{}'{}'=?", first ? "" : ",",
+    fmt::format_to(appender, R"({} "{}"=?)", first ? "" : ",",
                    fmt::to_string(fmt::join(prefixes, "_")));
     first = false;
   };
@@ -330,11 +330,11 @@ Result Connection::query(const std::string_view statement,
 }
 
 void Connection::createTable(const EntityDescription &entity) {
-  this->execute(fmt::format("DROP TABLE IF EXISTS '{}'", entity.name));
+  this->execute(fmt::format("DROP TABLE IF EXISTS \"{}\"", entity.name));
 
   fmt::memory_buffer buf;
   fmt::appender appender{buf};
-  fmt::format_to(appender, "CREATE TABLE '{}' (", entity.name);
+  fmt::format_to(appender, "CREATE TABLE \"{}\" (", entity.name);
 
   bool first = true;
   for (std::size_t i = 0; i < entity.fields.size(); ++i) {
@@ -349,9 +349,13 @@ void Connection::createTable(const EntityDescription &entity) {
   this->execute(fmt::to_string(buf));
 }
 
+void Connection::dropTable(const EntityDescription &entity) {
+  this->execute(fmt::format(R"(DROP TABLE "{}")", entity.name));
+}
+
 bool Connection::exists(const EntityDescription &entity) {
   const Result result = this->query(
-      fmt::format("SELECT EXISTS(SELECT 1 FROM '{}')", entity.name));
+      fmt::format(R"(SELECT EXISTS(SELECT 1 FROM "{}"))", entity.name));
   // NOLINTNEXTLINE(bugprone-unchecked-optional-access): fixed query
   return result.getRow().value().get(0).boolean();
 }
@@ -360,7 +364,7 @@ void Connection::persist(const EntityDescription &description, void *entity) {
   fmt::memory_buffer buf;
   fmt::appender appender{buf};
 
-  fmt::format_to(appender, "INSERT INTO '{}' VALUES (", description.name);
+  fmt::format_to(appender, R"(INSERT INTO "{}" VALUES ()", description.name);
 
   bool first = true;
   std::vector<AsImage> values;
@@ -384,7 +388,7 @@ void Connection::persist(const EntityDescription &description, void *entity) {
 bool Connection::find(const EntityDescription &description, const AsImage &key,
                       void *result) {
   const std::string queryStr =
-      fmt::format("SELECT * FROM '{}' WHERE {} = ?", description.name,
+      fmt::format(R"(SELECT * FROM "{}" WHERE {} = ?)", description.name,
                   description.fields[description.primaryKey].name);
 
   const Cursor cursor = Cursor{
@@ -398,7 +402,7 @@ bool Connection::find(const EntityDescription &description, const AsImage &key,
 void Connection::erase(const EntityDescription description,
                        const AsImage &key) {
   const std::string queryStr =
-      fmt::format("DELETE FROM '{}' WHERE {} = ?", description.name,
+      fmt::format(R"(DELETE FROM "{}" WHERE {} = ?)", description.name,
                   description.fields[description.primaryKey].name);
 
   const std::uint64_t changes =
@@ -413,7 +417,7 @@ void Connection::update(const EntityDescription description,
   fmt::memory_buffer buf;
   fmt::appender appender{buf};
 
-  fmt::format_to(appender, "UPDATE '{}' SET ", description.name);
+  fmt::format_to(appender, R"(UPDATE "{}" SET )", description.name);
 
   bool first = true;
   std::vector<AsImage> values;
@@ -444,7 +448,7 @@ void Connection::update(const EntityDescription description,
 
 Cursor Connection::iterate(const EntityDescription description) {
   const std::string queryStr =
-      fmt::format("SELECT * FROM '{}'", description.name);
+      fmt::format(R"(SELECT * FROM "{}")", description.name);
 
   return Cursor{
       this->query(queryStr),

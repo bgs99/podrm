@@ -29,6 +29,8 @@ public:
 
   void createTable(const EntityDescription &entity);
 
+  void dropTable(const EntityDescription &entity);
+
   bool exists(const EntityDescription &entity);
 
   void persist(const EntityDescription &description, void *entity);

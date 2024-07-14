@@ -33,6 +33,10 @@ public:
     return this->connection.createTable(DatabaseEntityDescription<T>.value());
   }
 
+  template <DatabaseEntity T> void dropTable() {
+    return this->connection.dropTable(DatabaseEntityDescription<T>.value());
+  }
+
   template <typename T> bool exists() {
     return this->connection.exists(DatabaseEntityDescription<T>.value());
   }
