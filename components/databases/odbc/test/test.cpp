@@ -84,6 +84,12 @@ TEST_CASE("ODBC works", "[odbc]") {
 
   orm::Database db = orm::Database::fromConnectionString(env, connectionString);
 
+  // Drop table manually in correct order for tests with persistent DBs
+  try {
+    db.dropTable<Person>();
+  } catch (...) {
+  }
+
   REQUIRE_NOTHROW(db.createTable<Address>());
   REQUIRE_NOTHROW(db.createTable<Person>());
 
