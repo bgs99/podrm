@@ -79,8 +79,10 @@ static_assert(podrm::DatabaseEntity<Person>);
 TEST_CASE("ODBC works", "[odbc]") {
   orm::Environment env;
 
-  orm::Database db = orm::Database::fromConnectionString(
-      env, std::getenv("PODRM_ODBC_CONNECTION_STRING"));
+  const char *connectionString = std::getenv("PODRM_ODBC_CONNECTION_STRING");
+  REQUIRE(connectionString != nullptr);
+
+  orm::Database db = orm::Database::fromConnectionString(env, connectionString);
 
   REQUIRE_NOTHROW(db.createTable<Address>());
   REQUIRE_NOTHROW(db.createTable<Person>());
