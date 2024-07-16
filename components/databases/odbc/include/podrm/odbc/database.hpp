@@ -1,10 +1,9 @@
 #pragma once
 
-#include "podrm/odbc/environment.hpp"
-
 #include <podrm/metadata.hpp>
 #include <podrm/odbc/cursor.hpp>
 #include <podrm/odbc/detail/connection.hpp>
+#include <podrm/odbc/environment.hpp>
 
 #include <optional>
 #include <string_view>
